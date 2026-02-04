@@ -208,16 +208,19 @@ fun MainAppContent(onSignOut: () -> Unit = {}) {
     var showSyncConflicts by remember { mutableStateOf(false) }
     
     Column(modifier = Modifier.fillMaxSize()) {
-        // Connectivity status bar at the top
-        ConnectivityStatusBar(
-            isConnected = isConnected,
-            isServerReachable = isServerReachable,
-            connectionType = connectionType,
-            offlineStatus = offlineStatus,
-            isSyncing = isSyncing || isComprehensiveSyncing,
-            hasUnresolvedConflicts = syncConflicts.isNotEmpty(),
-            onSyncConflictClick = { showSyncConflicts = true }
-        )
+        // Connectivity status bar at the top - only show in connected mode
+        // In standalone mode, internet connectivity is irrelevant
+        if (isConnectedMode) {
+            ConnectivityStatusBar(
+                isConnected = isConnected,
+                isServerReachable = isServerReachable,
+                connectionType = connectionType,
+                offlineStatus = offlineStatus,
+                isSyncing = isSyncing || isComprehensiveSyncing,
+                hasUnresolvedConflicts = syncConflicts.isNotEmpty(),
+                onSyncConflictClick = { showSyncConflicts = true }
+            )
+        }
         
         // Show sync progress if comprehensive sync is running
         syncProgress?.let { progress ->
