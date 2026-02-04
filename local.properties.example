@@ -1,0 +1,8 @@
+## This file must *NOT* be checked into Version Control Systems,
+# as it contains information specific to your local configuration.
+#
+# Location of the Android SDK. This should be set automatically by Android Studio.
+sdk.dir=/path/to/Android/sdk
+
+# Google Maps API Key (get from Google Cloud Console)
+MAPS_API_KEY=your_google_maps_api_key_here
