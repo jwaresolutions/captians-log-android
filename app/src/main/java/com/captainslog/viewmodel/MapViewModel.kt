@@ -408,6 +408,8 @@ class MapViewModel @Inject constructor(
      * Set the base map mode ("osm" or "noaa-charts")
      */
     fun setBaseMapMode(mode: String) {
+        // Only allow non-OSM base maps if their provider is enabled
+        if (mode != "osm" && !nauticalSettingsManager.isEnabled(mode)) return
         _uiState.value = _uiState.value.copy(baseMapMode = mode)
     }
 
@@ -428,6 +430,13 @@ class MapViewModel @Inject constructor(
     fun isNauticalLayerVisible(providerId: String): Boolean {
         return nauticalSettingsManager.isEnabled(providerId) &&
             (_uiState.value.nauticalLayerVisibility[providerId] ?: true)
+    }
+
+    /**
+     * Check if a provider is enabled in settings
+     */
+    fun isProviderEnabled(id: String): Boolean {
+        return nauticalSettingsManager.isEnabled(id)
     }
 
     /**

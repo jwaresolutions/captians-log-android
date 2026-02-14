@@ -34,7 +34,7 @@ object NauticalProviders {
             description = "Global bathymetry and ocean depth visualization via WMS.",
             website = "https://www.gebco.net",
             features = listOf("Global ocean depth data", "Free to use", "Scientific quality"),
-            warnings = listOf("Lower resolution in some areas", "WMS can be slower than tile sources"),
+            warnings = listOf("Lower resolution in some areas", "Pixelated when zoomed in past level 12", "First load can be slow (tiles are cached after)"),
             requiresApiKey = false
         ),
         NauticalProviderMeta(

@@ -6,12 +6,18 @@ import android.content.pm.PackageManager
 import android.location.Location
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Refresh
@@ -239,6 +245,8 @@ fun MapScreen(
             modifier = Modifier.align(Alignment.TopStart),
             uiState = uiState,
             enabledProviderIds = viewModel.getEnabledProviderIds(),
+            isNoaaEnabled = viewModel.isProviderEnabled("noaa-charts"),
+            isGebcoEnabled = viewModel.isProviderEnabled("gebco"),
             onToggleProvider = { id -> viewModel.toggleNauticalLayerVisibility(id) },
             onBaseMapModeChange = { mode -> viewModel.setBaseMapMode(mode) },
             onFilterChange = { filter ->
@@ -380,8 +388,9 @@ private fun updateMapOverlays(
 
     // 2. Handle base map mode
     if (uiState.baseMapMode == "noaa-charts") {
-        // NOAA Charts as base map — replace tile source, skip overlays
         mapView.setTileSource(NauticalTileSources.noaaCharts)
+    } else if (uiState.baseMapMode == "gebco") {
+        mapView.setTileSource(NauticalTileSources.gebcoBathymetry)
     } else {
         // Standard OSM base map + nautical tile overlays
         mapView.setTileSource(TileSourceFactory.MAPNIK)
@@ -569,127 +578,167 @@ private fun MarineWeatherCard(
 }
 
 /**
- * Map controls overlay with per-provider nautical layer toggles,
- * trip/location filters, and refresh.
+ * Map controls overlay with a toggle button and expandable panel
+ * containing base map selector, overlay toggles, data layers, and refresh.
  */
 @Composable
 private fun MapControlsOverlay(
     modifier: Modifier = Modifier,
     uiState: MapUiState,
     enabledProviderIds: List<String>,
+    isNoaaEnabled: Boolean,
+    isGebcoEnabled: Boolean,
     onToggleProvider: (String) -> Unit,
     onBaseMapModeChange: (String) -> Unit,
     onFilterChange: (MapFilter) -> Unit,
     onRefresh: () -> Unit
 ) {
-    val isNoaaBase = uiState.baseMapMode == "noaa-charts"
+    var panelVisible by remember { mutableStateOf(false) }
+    val isOsmBase = uiState.baseMapMode == "osm"
 
-    Card(
+    Column(
         modifier = modifier.padding(16.dp),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
-        )
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        // Toggle button (always visible)
+        SmallFloatingActionButton(
+            onClick = { panelVisible = !panelVisible },
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+            contentColor = MaterialTheme.colorScheme.onSurface
         ) {
-            Text(
-                text = "Map Controls",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
+            Icon(
+                imageVector = Icons.Default.Layers,
+                contentDescription = "Map layers"
             )
+        }
 
-            // Base map selector
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
+        // Expandable panel
+        AnimatedVisibility(
+            visible = panelVisible,
+            enter = fadeIn() + slideInVertically(),
+            exit = fadeOut() + slideOutVertically()
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(0.8f),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                )
             ) {
-                FilterChip(
-                    selected = !isNoaaBase,
-                    onClick = { onBaseMapModeChange("osm") },
-                    label = { Text("Standard", style = MaterialTheme.typography.labelSmall) }
-                )
-                FilterChip(
-                    selected = isNoaaBase,
-                    onClick = { onBaseMapModeChange("noaa-charts") },
-                    label = { Text("NOAA Charts", style = MaterialTheme.typography.labelSmall) }
-                )
-            }
-
-            // Per-provider nautical layer chips (hidden when NOAA Charts is base map)
-            if (!isNoaaBase) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.horizontalScroll(rememberScrollState())
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    enabledProviderIds.forEach { id ->
-                        val providerName = NauticalProviders.getById(id)?.name ?: id
-                        val isVisible = uiState.nauticalLayerVisibility[id] ?: true
+                    // Base Map section
+                    Text(
+                        text = "Base Map",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.horizontalScroll(rememberScrollState())
+                    ) {
                         FilterChip(
-                            selected = isVisible,
-                            onClick = { onToggleProvider(id) },
-                            label = { Text(providerName, style = MaterialTheme.typography.labelSmall) },
+                            selected = isOsmBase,
+                            onClick = { onBaseMapModeChange("osm") },
+                            label = { Text("Standard", style = MaterialTheme.typography.labelSmall) }
+                        )
+                        if (isNoaaEnabled) {
+                            FilterChip(
+                                selected = uiState.baseMapMode == "noaa-charts",
+                                onClick = { onBaseMapModeChange("noaa-charts") },
+                                label = { Text("NOAA Charts", style = MaterialTheme.typography.labelSmall) }
+                            )
+                        }
+                        if (isGebcoEnabled) {
+                            FilterChip(
+                                selected = uiState.baseMapMode == "gebco",
+                                onClick = { onBaseMapModeChange("gebco") },
+                                label = { Text("GEBCO Bathymetry", style = MaterialTheme.typography.labelSmall) }
+                            )
+                        }
+                    }
+
+                    // Overlays section (only for standard OSM base map)
+                    if (isOsmBase) {
+                        HorizontalDivider()
+                        Text(
+                            text = "Overlays",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.horizontalScroll(rememberScrollState())
+                        ) {
+                            enabledProviderIds.forEach { id ->
+                                val providerName = NauticalProviders.getById(id)?.name ?: id
+                                val isVisible = uiState.nauticalLayerVisibility[id] ?: true
+                                FilterChip(
+                                    selected = isVisible,
+                                    onClick = { onToggleProvider(id) },
+                                    label = { Text(providerName, style = MaterialTheme.typography.labelSmall) }
+                                )
+                            }
+                        }
+                    }
+
+                    // Data Layers section
+                    HorizontalDivider()
+                    Text(
+                        text = "Data Layers",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilterChip(
+                            selected = uiState.filter.showTrips,
+                            onClick = {
+                                onFilterChange(uiState.filter.copy(showTrips = !uiState.filter.showTrips))
+                            },
+                            label = { Text("Trips") },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Default.Settings,
+                                    imageVector = Icons.Default.LocationOn,
                                     contentDescription = null,
-                                    modifier = Modifier.size(14.dp)
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        )
+                        FilterChip(
+                            selected = uiState.filter.showMarkedLocations,
+                            onClick = {
+                                onFilterChange(uiState.filter.copy(showMarkedLocations = !uiState.filter.showMarkedLocations))
+                            },
+                            label = { Text("Locations") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Place,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         )
                     }
-                }
-            }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Show trips toggle
-                FilterChip(
-                    selected = uiState.filter.showTrips,
-                    onClick = {
-                        onFilterChange(uiState.filter.copy(showTrips = !uiState.filter.showTrips))
-                    },
-                    label = { Text("Trips") },
-                    leadingIcon = {
+                    // Refresh button
+                    HorizontalDivider()
+                    TextButton(
+                        onClick = onRefresh,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Icon(
-                            imageVector = Icons.Default.LocationOn,
+                            imageVector = Icons.Default.Refresh,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Refresh Data")
                     }
-                )
-
-                // Show locations toggle
-                FilterChip(
-                    selected = uiState.filter.showMarkedLocations,
-                    onClick = {
-                        onFilterChange(uiState.filter.copy(showMarkedLocations = !uiState.filter.showMarkedLocations))
-                    },
-                    label = { Text("Locations") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Place,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                )
-
-                // Refresh button
-                IconButton(
-                    onClick = onRefresh,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Refresh",
-                        modifier = Modifier.size(16.dp)
-                    )
                 }
             }
         }

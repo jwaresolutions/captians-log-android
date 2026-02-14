@@ -7,6 +7,7 @@ object NauticalTileSources {
 
     private const val OPENSEAMAP_BASE = "https://t1.openseamap.org/seamark/"
     private const val NOAA_MCS_BASE = "https://gis.charttools.noaa.gov/arcgis/rest/services/MCS/NOAAChartDisplay/MapServer/exts/MaritimeChartService/MapServer/export"
+    private const val GEBCO_WMS_BASE = "https://wms.gebco.net/mapserv"
 
     /** Web Mercator origin shift (half circumference in meters) */
     private const val ORIGIN_SHIFT = 20037508.342789244
@@ -47,14 +48,25 @@ object NauticalTileSources {
         }
     }
 
+    val gebcoBathymetry = object : OnlineTileSourceBase(
+        "GEBCOBathymetry", 0, 12, 256, ".jpeg",
+        arrayOf(GEBCO_WMS_BASE)
+    ) {
+        override fun getTileURLString(pMapTileIndex: Long): String {
+            val zoom = MapTileIndex.getZoom(pMapTileIndex)
+            val x = MapTileIndex.getX(pMapTileIndex)
+            val y = MapTileIndex.getY(pMapTileIndex)
+            val bbox = tileToBbox3857(x, y, zoom)
+            return "$GEBCO_WMS_BASE?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=gebco_latest&STYLES=&SRS=EPSG:3857&BBOX=${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}&WIDTH=256&HEIGHT=256&FORMAT=image/jpeg"
+        }
+    }
+
     fun getSourceById(id: String): OnlineTileSourceBase? = when (id) {
         "openseamap" -> openSeaMap
         "noaa-charts" -> noaaCharts
-        // GEBCO bathymetry requires WMS support which is not yet implemented for osmdroid
-        "gebco" -> null
+        "gebco" -> gebcoBathymetry
         else -> null
     }
 
-    // Note: GEBCO is in settings but not yet supported on Android (requires WMS tile support)
     val tileProviderIds = listOf("openseamap")
 }

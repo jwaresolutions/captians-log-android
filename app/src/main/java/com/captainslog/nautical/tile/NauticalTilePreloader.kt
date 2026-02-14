@@ -42,6 +42,11 @@ object NauticalTilePreloader {
                 if (settingsManager.isEnabled("openseamap")) {
                     preloadSource(NauticalTileSources.openSeaMap, cachePath, lat, lon)
                 }
+
+                // Only preload GEBCO bathymetry if enabled in settings
+                if (settingsManager.isEnabled("gebco")) {
+                    preloadSource(NauticalTileSources.gebcoBathymetry, cachePath, lat, lon)
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error preloading tiles", e)
             }
