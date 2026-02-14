@@ -118,6 +118,40 @@ Connection priority:
 - Stop point detection (5+ minutes in 45-foot radius)
 - Offline trip recording
 
+### Nautical Map Providers
+
+The app supports multiple nautical data providers, configurable in Settings. Providers are organized by tier (Free/Paid) and type (Base Map, Overlay, Data).
+
+#### Free Providers
+
+| Provider | Type | Status | Notes |
+|----------|------|--------|-------|
+| **OpenSeaMap** | Overlay | Working | Nautical marks, buoys, lights. Community-maintained, global coverage. See [openseamap.org/legend](https://openseamap.org/legend) for symbol meanings. |
+| **NOAA Charts** | Base Map | Working | Official US nautical charts. US coastal waters only. Slow initial load, tiles cached after first view. Preloads around GPS location on startup. |
+| **GEBCO Bathymetry** | Base Map | Working | Global ocean depth visualization via WMS. Very slow initial load (WMS server), tiles cached after first view. Preloads around GPS location on startup. Best at zoom 3-12. |
+| **NOAA CO-OPS** | Data | Working | Real-time and predicted tide data from US stations. Shows tide station markers with predictions on map. Independently togglable. |
+| **NOAA Weather Alerts** | Data | Working | Active marine weather alerts from the National Weather Service. Shows colored zone polygons (red=warning, orange=watch, yellow=advisory), alert markers, dismissible banner card, and push notifications via WorkManager (15-min polling). |
+| **Open-Meteo Marine** | Data | Working | Marine weather forecasts (wave height, swell, wind, temperature). Shows crosshair at map center and info card in bottom-left corner. Global coverage. |
+| **Open-Meteo Ocean** | Data | Limited | Ocean current velocity, direction, and sea surface temperature. API accepts parameters but returns null for most locations. Data may appear in certain ocean regions. Card displays when data is available. |
+| **AISstream** | Data | Not Tested | Real-time AIS vessel tracking via WebSocket. Requires free API key from aisstream.io. Service reported as currently not vending data. |
+
+#### Paid Providers
+
+| Provider | Type | Status | Notes |
+|----------|------|--------|-------|
+| **WorldTides** | Data | Untested | Global tide predictions. Paid per request ($10/5,000 predictions). |
+| **Stormglass** | Data | Untested | Premium marine weather from multiple sources. Free tier: 10 req/day, paid from $19/month. |
+| **Windy** | Overlay | Untested | Animated wind/wave/weather overlays. ~$720/year. |
+| **Navionics/Garmin** | Base Map | Untested | Premium nautical charts. Contact for pricing. |
+| **MarineTraffic** | Data | Untested | Global vessel tracking with satellite AIS. Credit-based pricing. |
+
+#### Removed Providers
+
+| Provider | Reason |
+|----------|--------|
+| **USCG NAVCEN / Wrecks & Obstructions** | Original USCG GeoJSON URL was dead (404). Switched to NOAA AWOIS ArcGIS service, but it only contained 359 records concentrated off the Carolina coast with zero West Coast coverage. Data too sparse to be useful. |
+| **OpenSeaMap Depth** | Depth sounding tile overlay. Tile server at depth.openseamap.org and t1.openseamap.org/depth both return empty transparent PNGs (334 bytes) for every tile globally. Service is effectively dead. |
+
 ## Building
 
 ### Debug Build

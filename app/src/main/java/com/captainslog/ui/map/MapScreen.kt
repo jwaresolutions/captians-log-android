@@ -45,7 +45,10 @@ import com.captainslog.nautical.tile.NauticalTileSources
 import com.captainslog.nautical.service.AISVessel
 import com.captainslog.nautical.service.TideStation
 import com.captainslog.nautical.service.MarineWeather
+import com.captainslog.nautical.model.MarineAlert
+import com.captainslog.nautical.model.OceanData
 import com.google.android.gms.location.LocationServices
+import org.osmdroid.views.overlay.Polygon
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapListener
@@ -262,8 +265,9 @@ fun MapScreen(
             }
         )
 
-        // Weather crosshair at map center (when Open-Meteo is active)
-        if (uiState.marineWeather != null && viewModel.isNauticalLayerVisible("open-meteo")) {
+        // Weather crosshair at map center (when any Open-Meteo provider is active)
+        if ((uiState.marineWeather != null && viewModel.isNauticalLayerVisible("open-meteo")) ||
+            (uiState.oceanData != null && viewModel.isNauticalLayerVisible("open-meteo-ocean"))) {
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Weather data location",
@@ -274,13 +278,26 @@ fun MapScreen(
             )
         }
 
+        // Marine alert banner (top)
+        if (uiState.marineAlerts.isNotEmpty() && viewModel.isNauticalLayerVisible("noaa-alerts")) {
+            MarineAlertBanner(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 72.dp, start = 16.dp, end = 16.dp),
+                alerts = uiState.marineAlerts
+            )
+        }
+
         // Marine weather overlay (bottom-left)
-        if (uiState.marineWeather != null && viewModel.isNauticalLayerVisible("open-meteo")) {
+        val showMarineWeather = uiState.marineWeather != null && viewModel.isNauticalLayerVisible("open-meteo")
+        val showOceanData = uiState.oceanData != null && viewModel.isNauticalLayerVisible("open-meteo-ocean")
+        if (showMarineWeather || showOceanData) {
             MarineWeatherCard(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(16.dp),
-                weather = uiState.marineWeather!!
+                weather = if (showMarineWeather) uiState.marineWeather else null,
+                oceanData = if (showOceanData) uiState.oceanData else null
             )
         }
 
@@ -471,7 +488,44 @@ private fun updateMapOverlays(
         mapView.overlayManager.add(marker)
     }
 
-    // 7. Invalidate to redraw
+    // 7. Add marine alert zone polygons and markers
+    if (viewModel.isNauticalLayerVisible("noaa-alerts")) {
+        uiState.marineAlerts.forEach { alert ->
+            alert.polygon?.let { points ->
+                val polygon = Polygon().apply {
+                    this.points = points
+                    fillPaint.color = when (alert.severity.lowercase()) {
+                        "extreme", "severe" -> android.graphics.Color.argb(60, 255, 0, 0)
+                        "moderate" -> android.graphics.Color.argb(60, 255, 165, 0)
+                        else -> android.graphics.Color.argb(60, 255, 255, 0)
+                    }
+                    outlinePaint.color = when (alert.severity.lowercase()) {
+                        "extreme", "severe" -> android.graphics.Color.RED
+                        "moderate" -> android.graphics.Color.argb(255, 255, 165, 0)
+                        else -> android.graphics.Color.YELLOW
+                    }
+                    outlinePaint.strokeWidth = 3f
+                    title = alert.event
+                    snippet = alert.headline
+                }
+                mapView.overlayManager.add(polygon)
+
+                // Add a marker at the polygon center for discoverability
+                val centerLat = points.sumOf { it.latitude } / points.size
+                val centerLon = points.sumOf { it.longitude } / points.size
+                val marker = Marker(mapView).apply {
+                    position = GeoPoint(centerLat, centerLon)
+                    title = alert.event
+                    snippet = alert.headline
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    icon = ContextCompat.getDrawable(mapView.context, android.R.drawable.ic_dialog_alert)
+                }
+                mapView.overlayManager.add(marker)
+            }
+        }
+    }
+
+    // 8. Invalidate to redraw
     mapView.invalidate()
 }
 
@@ -558,7 +612,8 @@ private fun addMarkedLocationMarker(mapView: MapView, locationWithDistance: Mark
 @Composable
 private fun MarineWeatherCard(
     modifier: Modifier = Modifier,
-    weather: MarineWeather
+    weather: MarineWeather? = null,
+    oceanData: OceanData? = null
 ) {
     Card(
         modifier = modifier.width(180.dp),
@@ -571,22 +626,40 @@ private fun MarineWeatherCard(
             modifier = Modifier.padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(
-                text = "Marine Weather",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold
-            )
-            weather.waveHeight?.let {
-                Text(text = "Waves: ${"%.1f".format(it)} m", style = MaterialTheme.typography.bodySmall)
+            if (weather != null) {
+                Text(
+                    text = "Marine Weather",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                weather.waveHeight?.let {
+                    Text(text = "Waves: ${"%.1f".format(it)} m", style = MaterialTheme.typography.bodySmall)
+                }
+                weather.windSpeed?.let {
+                    Text(text = "Wind: ${"%.0f".format(it)} km/h", style = MaterialTheme.typography.bodySmall)
+                }
+                weather.temperature?.let {
+                    Text(text = "Temp: ${"%.1f".format(it)}\u00B0C", style = MaterialTheme.typography.bodySmall)
+                }
+                weather.swellHeight?.let {
+                    Text(text = "Swell: ${"%.1f".format(it)} m", style = MaterialTheme.typography.bodySmall)
+                }
             }
-            weather.windSpeed?.let {
-                Text(text = "Wind: ${"%.0f".format(it)} km/h", style = MaterialTheme.typography.bodySmall)
-            }
-            weather.temperature?.let {
-                Text(text = "Temp: ${"%.1f".format(it)}\u00B0C", style = MaterialTheme.typography.bodySmall)
-            }
-            weather.swellHeight?.let {
-                Text(text = "Swell: ${"%.1f".format(it)} m", style = MaterialTheme.typography.bodySmall)
+            // Ocean data
+            if (oceanData != null) {
+                if (weather != null) HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+                Text(
+                    text = "Ocean Data",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                oceanData.seaSurfaceTemp?.let {
+                    Text(text = "SST: ${"%.1f".format(it)}\u00B0C", style = MaterialTheme.typography.bodySmall)
+                }
+                oceanData.currentVelocity?.let { vel ->
+                    val dir = oceanData.currentDirection?.let { "${"%.0f".format(it)}\u00B0" } ?: ""
+                    Text(text = "Current: ${"%.1f".format(vel)} m/s $dir", style = MaterialTheme.typography.bodySmall)
+                }
             }
         }
     }
@@ -687,7 +760,35 @@ private fun MapControlsOverlay(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.horizontalScroll(rememberScrollState())
                         ) {
-                            enabledProviderIds.forEach { id ->
+                            enabledProviderIds
+                                .filter { NauticalProviders.getById(it)?.mapRole == com.captainslog.nautical.model.MapRole.OVERLAY }
+                                .forEach { id ->
+                                    val providerName = NauticalProviders.getById(id)?.name ?: id
+                                    val isVisible = uiState.nauticalLayerVisibility[id] ?: true
+                                    FilterChip(
+                                        selected = isVisible,
+                                        onClick = { onToggleProvider(id) },
+                                        label = { Text(providerName, style = MaterialTheme.typography.labelSmall) }
+                                    )
+                                }
+                        }
+                    }
+
+                    // Nautical Data section
+                    val dataProviderIds = enabledProviderIds
+                        .filter { NauticalProviders.getById(it)?.mapRole == com.captainslog.nautical.model.MapRole.DATA }
+                    if (dataProviderIds.isNotEmpty()) {
+                        HorizontalDivider()
+                        Text(
+                            text = "Nautical Data",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.horizontalScroll(rememberScrollState())
+                        ) {
+                            dataProviderIds.forEach { id ->
                                 val providerName = NauticalProviders.getById(id)?.name ?: id
                                 val isVisible = uiState.nauticalLayerVisibility[id] ?: true
                                 FilterChip(
@@ -699,10 +800,10 @@ private fun MapControlsOverlay(
                         }
                     }
 
-                    // Data Layers section
+                    // Map Data section
                     HorizontalDivider()
                     Text(
-                        text = "Data Layers",
+                        text = "Map Data",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -755,6 +856,58 @@ private fun MapControlsOverlay(
                         Text("Refresh Data")
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MarineAlertBanner(
+    modifier: Modifier = Modifier,
+    alerts: List<MarineAlert>
+) {
+    var dismissed by remember { mutableStateOf(false) }
+    if (dismissed) return
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = when (alerts.firstOrNull()?.severity?.lowercase()) {
+                "extreme", "severe" -> MaterialTheme.colorScheme.errorContainer
+                "moderate" -> MaterialTheme.colorScheme.tertiaryContainer
+                else -> MaterialTheme.colorScheme.secondaryContainer
+            }
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${alerts.size} Active Alert${if (alerts.size > 1) "s" else ""}",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                TextButton(onClick = { dismissed = true }) {
+                    Text("Dismiss", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+            alerts.take(3).forEach { alert ->
+                Text(
+                    text = "${alert.event}: ${alert.headline}",
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 2
+                )
+            }
+            if (alerts.size > 3) {
+                Text(
+                    text = "+${alerts.size - 3} more",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }

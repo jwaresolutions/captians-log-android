@@ -1,5 +1,6 @@
 package com.captainslog.nautical.service
 
+import com.captainslog.nautical.model.OceanData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -46,6 +47,30 @@ object OpenMeteoService {
             )
         } catch (e: Exception) {
             android.util.Log.e("OpenMeteoService", "Failed to fetch marine weather", e)
+            null
+        }
+    }
+
+    suspend fun fetchOceanData(lat: Double, lng: Double): OceanData? = withContext(Dispatchers.IO) {
+        try {
+            val url = "https://marine-api.open-meteo.com/v1/marine?latitude=$lat&longitude=$lng" +
+                "&current=ocean_current_velocity,ocean_current_direction,sea_surface_temperature"
+            val json = URL(url).readText()
+            val data = JSONObject(json)
+            val current = data.optJSONObject("current") ?: return@withContext null
+
+            val velocity = current.optDouble("ocean_current_velocity").takeIf { !it.isNaN() }
+            val direction = current.optDouble("ocean_current_direction").takeIf { !it.isNaN() }
+            val sst = current.optDouble("sea_surface_temperature").takeIf { !it.isNaN() }
+
+            if (velocity == null && direction == null && sst == null) null
+            else OceanData(
+                currentVelocity = velocity,
+                currentDirection = direction,
+                seaSurfaceTemp = sst
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("OpenMeteoService", "Failed to fetch ocean data", e)
             null
         }
     }

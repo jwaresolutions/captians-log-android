@@ -19,6 +19,9 @@ import com.captainslog.nautical.service.TideStation
 import com.captainslog.nautical.service.TidePrediction
 import com.captainslog.nautical.service.OpenMeteoService
 import com.captainslog.nautical.service.MarineWeather
+import com.captainslog.nautical.model.MarineAlert
+import com.captainslog.nautical.model.OceanData
+import com.captainslog.nautical.service.NoaaWeatherService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -54,6 +57,11 @@ class MapViewModel @Inject constructor(
         // Re-trigger nautical data when settings change (e.g. API key saved)
         viewModelScope.launch {
             nauticalSettingsManager.settings.collect {
+                // Revert to standard map if current base map provider was disabled
+                val currentBase = _uiState.value.baseMapMode
+                if (currentBase != "osm" && !nauticalSettingsManager.isEnabled(currentBase)) {
+                    _uiState.value = _uiState.value.copy(baseMapMode = "osm")
+                }
                 lastViewport?.let { vp ->
                     loadNauticalData(vp[0], vp[1], vp[2], vp[3])
                 }
@@ -358,6 +366,20 @@ class MapViewModel @Inject constructor(
             loadMarineWeather(centerLat, centerLng)
         }
 
+        // Load marine alerts if NOAA Alerts is enabled
+        if (nauticalSettingsManager.isEnabled("noaa-alerts")) {
+            loadMarineAlerts(centerLat, centerLng)
+        } else {
+            _uiState.value = _uiState.value.copy(marineAlerts = emptyList())
+        }
+
+        // Load ocean data if Open-Meteo Ocean is enabled
+        if (nauticalSettingsManager.isEnabled("open-meteo-ocean")) {
+            loadOceanData(centerLat, centerLng)
+        } else {
+            _uiState.value = _uiState.value.copy(oceanData = null)
+        }
+
         // Connect AIS if enabled and has API key
         val aisConfig = nauticalSettingsManager.getProviderConfig("aisstream")
         if (nauticalSettingsManager.isEnabled("aisstream") && !aisConfig.apiKey.isNullOrBlank()) {
@@ -393,6 +415,28 @@ class MapViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(marineWeather = weather)
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading marine weather", e)
+            }
+        }
+    }
+
+    private fun loadMarineAlerts(lat: Double, lng: Double) {
+        viewModelScope.launch {
+            try {
+                val alerts = NoaaWeatherService.fetchAlerts(lat, lng)
+                _uiState.value = _uiState.value.copy(marineAlerts = alerts)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading marine alerts", e)
+            }
+        }
+    }
+
+    private fun loadOceanData(lat: Double, lng: Double) {
+        viewModelScope.launch {
+            try {
+                val data = OpenMeteoService.fetchOceanData(lat, lng)
+                _uiState.value = _uiState.value.copy(oceanData = data)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading ocean data", e)
             }
         }
     }
@@ -483,6 +527,8 @@ data class MapUiState(
     val tideStations: List<TideStation> = emptyList(),
     val tidePredictions: Map<String, List<TidePrediction>> = emptyMap(),
     val marineWeather: MarineWeather? = null,
+    val marineAlerts: List<MarineAlert> = emptyList(),
+    val oceanData: OceanData? = null,
     val enabledNauticalLayers: Set<String> = emptySet(),
     // Per-layer visibility on map (separate from settings enabled)
     val nauticalLayerVisibility: Map<String, Boolean> = emptyMap(),

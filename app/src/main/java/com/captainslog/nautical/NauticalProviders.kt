@@ -9,7 +9,7 @@ object NauticalProviders {
             name = "OpenSeaMap",
             tier = ProviderTier.FREE,
             type = ProviderType.TILE,
-            description = "Nautical marks, buoys, lights, and other seamark overlays on OpenStreetMap.",
+            description = "Nautical marks, buoys, lights, and other seamark overlays on OpenStreetMap. See openseamap.org/legend for symbol meanings.",
             website = "https://openseamap.org",
             features = listOf("Completely free", "Community maintained", "Global coverage"),
             warnings = listOf("Limited detail in some regions", "Community-dependent updates"),
@@ -26,6 +26,7 @@ object NauticalProviders {
             features = listOf("Official government data", "Depth soundings and hazards", "Free to use", "Viewed areas cached for offline use"),
             warnings = listOf("US coastal waters only", "Internet required to load new areas", "Can be slow on first load"),
             requiresApiKey = false,
+            group = "NOAA",
             mapRole = MapRole.BASE_MAP
         ),
         NauticalProviderMeta(
@@ -48,9 +49,9 @@ object NauticalProviders {
             description = "Real-time and predicted tide and current data from US stations.",
             website = "https://tidesandcurrents.noaa.gov",
             features = listOf("Official NOAA data", "Real-time observations", "Tide predictions shown on map markers", "Works on any base map"),
-            warnings = listOf("US stations only", "Rate limited", "Requires NOAA Charts to be enabled"),
+            warnings = listOf("US stations only", "Rate limited"),
             requiresApiKey = false,
-            parentId = "noaa-charts"
+            group = "NOAA"
         ),
         NauticalProviderMeta(
             id = "aisstream",
@@ -73,6 +74,29 @@ object NauticalProviders {
             website = "https://open-meteo.com",
             features = listOf("Completely free", "No API key needed", "Global coverage"),
             warnings = listOf("Forecast only, no observations", "Less detail than paid alternatives"),
+            requiresApiKey = false
+        ),
+        NauticalProviderMeta(
+            id = "noaa-alerts",
+            name = "NOAA Weather Alerts",
+            tier = ProviderTier.FREE,
+            type = ProviderType.DATA,
+            description = "Active marine weather alerts from the National Weather Service including storm warnings, small craft advisories, and coastal hazards.",
+            website = "https://www.weather.gov",
+            features = listOf("Official NWS alerts", "Zone polygon overlays", "Push notifications", "Severity-based coloring"),
+            warnings = listOf("US waters only", "Requires internet"),
+            requiresApiKey = false,
+            group = "NOAA"
+        ),
+        NauticalProviderMeta(
+            id = "open-meteo-ocean",
+            name = "Open-Meteo Ocean",
+            tier = ProviderTier.FREE,
+            type = ProviderType.DATA,
+            description = "Ocean current velocity, direction, and sea surface temperature data.",
+            website = "https://open-meteo.com",
+            features = listOf("Ocean currents", "Sea surface temperature", "No API key needed", "Global coverage"),
+            warnings = listOf("Forecast data only", "Limited resolution"),
             requiresApiKey = false
         ),
         NauticalProviderMeta(

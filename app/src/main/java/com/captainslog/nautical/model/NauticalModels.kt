@@ -13,6 +13,7 @@ data class NauticalProviderMeta(
     val apiKeySignupUrl: String? = null,
     val pricingNote: String? = null,
     val parentId: String? = null,
+    val group: String? = null,
     val mapRole: MapRole = MapRole.DATA
 )
 
@@ -27,3 +28,30 @@ data class NauticalProviderConfig(
 )
 
 typealias NauticalSettings = Map<String, NauticalProviderConfig>
+
+data class MarineAlert(
+    val id: String,
+    val event: String,
+    val headline: String,
+    val description: String,
+    val severity: String,
+    val areaDesc: String,
+    val polygon: List<org.osmdroid.util.GeoPoint>?,
+    val onset: String?,
+    val expires: String?
+)
+
+data class NavigationHazard(
+    val id: String,
+    val name: String,
+    val latitude: Double,
+    val longitude: Double,
+    val type: String,
+    val description: String
+)
+
+data class OceanData(
+    val currentVelocity: Double?,
+    val currentDirection: Double?,
+    val seaSurfaceTemp: Double?
+)

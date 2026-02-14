@@ -50,7 +50,34 @@ fun NauticalSettingsScreen(
     ) {
         // Free Providers
         SettingsSection(title = "Free Providers") {
-            NauticalProviders.free.filter { it.parentId == null }.forEach { provider ->
+            // Separate grouped and ungrouped providers
+            val grouped = NauticalProviders.free.filter { it.group != null }.groupBy { it.group!! }
+            val ungrouped = NauticalProviders.free.filter { it.group == null }
+
+            // Render grouped providers under section headers
+            grouped.forEach { (groupName, providers) ->
+                Text(
+                    text = groupName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp)
+                )
+                providers.forEach { provider ->
+                    ProviderCard(
+                        provider = provider,
+                        enabled = settings[provider.id]?.enabled ?: false,
+                        apiKey = settings[provider.id]?.apiKey ?: "",
+                        apiKeyVerified = settings[provider.id]?.options?.get("apiKeyVerified") == "true",
+                        onToggle = { settingsManager.toggleProvider(provider.id) },
+                        onApiKeyChange = { settingsManager.setApiKey(provider.id, it) },
+                        onApiKeyVerified = { verified -> settingsManager.setProviderOption(provider.id, "apiKeyVerified", verified.toString()) }
+                    )
+                }
+            }
+
+            // Render ungrouped providers standalone
+            ungrouped.forEach { provider ->
                 ProviderCard(
                     provider = provider,
                     enabled = settings[provider.id]?.enabled ?: false,
@@ -60,21 +87,6 @@ fun NauticalSettingsScreen(
                     onApiKeyChange = { settingsManager.setApiKey(provider.id, it) },
                     onApiKeyVerified = { verified -> settingsManager.setProviderOption(provider.id, "apiKeyVerified", verified.toString()) }
                 )
-                // Render child providers indented under parent
-                val parentEnabled = settings[provider.id]?.enabled ?: false
-                NauticalProviders.free.filter { it.parentId == provider.id }.forEach { child ->
-                    ProviderCard(
-                        provider = child,
-                        enabled = settings[child.id]?.enabled ?: false,
-                        apiKey = settings[child.id]?.apiKey ?: "",
-                        apiKeyVerified = settings[child.id]?.options?.get("apiKeyVerified") == "true",
-                        onToggle = { settingsManager.toggleProvider(child.id) },
-                        onApiKeyChange = { settingsManager.setApiKey(child.id, it) },
-                        onApiKeyVerified = { verified -> settingsManager.setProviderOption(child.id, "apiKeyVerified", verified.toString()) },
-                        indent = true,
-                        parentEnabled = parentEnabled
-                    )
-                }
             }
         }
 
@@ -82,7 +94,7 @@ fun NauticalSettingsScreen(
 
         // Paid Providers
         SettingsSection(title = "Paid Providers") {
-            NauticalProviders.paid.filter { it.parentId == null }.forEach { provider ->
+            NauticalProviders.paid.forEach { provider ->
                 ProviderCard(
                     provider = provider,
                     enabled = settings[provider.id]?.enabled ?: false,
