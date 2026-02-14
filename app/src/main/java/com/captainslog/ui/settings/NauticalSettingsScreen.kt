@@ -159,31 +159,31 @@ private fun ProviderCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    // Pros
+                    // Features
                     Text(
-                        text = "Advantages",
+                        text = "Features",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
-                    provider.pros.forEach { pro ->
+                    provider.features.forEach { feature ->
                         Text(
-                            text = "+ $pro",
+                            text = "+ $feature",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
 
-                    // Cons
+                    // Warnings
                     Text(
-                        text = "Limitations",
+                        text = "Warnings",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )
-                    provider.cons.forEach { con ->
+                    provider.warnings.forEach { warning ->
                         Text(
-                            text = "- $con",
+                            text = "⚠ $warning",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
                         )

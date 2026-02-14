@@ -7,8 +7,8 @@ data class NauticalProviderMeta(
     val type: ProviderType,
     val description: String,
     val website: String,
-    val pros: List<String>,
-    val cons: List<String>,
+    val features: List<String>,
+    val warnings: List<String>,
     val requiresApiKey: Boolean,
     val apiKeySignupUrl: String? = null,
     val pricingNote: String? = null
