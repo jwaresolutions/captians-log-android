@@ -262,6 +262,18 @@ fun MapScreen(
             }
         )
 
+        // Weather crosshair at map center (when Open-Meteo is active)
+        if (uiState.marineWeather != null && viewModel.isNauticalLayerVisible("open-meteo")) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Weather data location",
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(24.dp),
+                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+            )
+        }
+
         // Marine weather overlay (bottom-left)
         if (uiState.marineWeather != null && viewModel.isNauticalLayerVisible("open-meteo")) {
             MarineWeatherCard(
