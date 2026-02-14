@@ -12,11 +12,13 @@ data class NauticalProviderMeta(
     val requiresApiKey: Boolean,
     val apiKeySignupUrl: String? = null,
     val pricingNote: String? = null,
-    val parentId: String? = null
+    val parentId: String? = null,
+    val mapRole: MapRole = MapRole.DATA
 )
 
 enum class ProviderTier { FREE, PAID }
 enum class ProviderType { TILE, DATA }
+enum class MapRole { BASE_MAP, OVERLAY, DATA }
 
 data class NauticalProviderConfig(
     val enabled: Boolean = false,

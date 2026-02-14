@@ -19,6 +19,10 @@ data class AISVessel(
 
 class AISStreamService {
 
+    companion object {
+        private const val TAG = "AISStreamService"
+    }
+
     private var webSocket: WebSocket? = null
     private val client = OkHttpClient()
     private val vessels = ConcurrentHashMap<Long, AISVessel>()
@@ -31,6 +35,8 @@ class AISStreamService {
     private var lastMinLng: Double = 0.0
     private var lastMaxLat: Double = 0.0
     private var lastMaxLng: Double = 0.0
+    private var reconnectAttempts: Int = 0
+    private val maxReconnectAttempts: Int = 3
 
     fun connect(apiKey: String, minLat: Double, minLng: Double, maxLat: Double, maxLng: Double) {
         lastApiKey = apiKey
@@ -40,13 +46,18 @@ class AISStreamService {
         lastMaxLng = maxLng
 
         disconnect()
+        reconnectAttempts = 0
 
         val request = Request.Builder()
             .url("wss://stream.aisstream.io/v0/stream")
             .build()
 
+        android.util.Log.d(TAG, "Connecting to AISstream with bbox [$minLat,$minLng,$maxLat,$maxLng]")
+
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(ws: WebSocket, response: Response) {
+                android.util.Log.d(TAG, "WebSocket opened, sending subscription")
+                reconnectAttempts = 0
                 val subscribeMsg = JSONObject().apply {
                     put("APIKey", apiKey)
                     put("BoundingBoxes", org.json.JSONArray().apply {
@@ -62,8 +73,15 @@ class AISStreamService {
             override fun onMessage(ws: WebSocket, text: String) {
                 try {
                     val data = JSONObject(text)
+                    // Check for error response (e.g. invalid API key)
+                    val error = data.optString("error", "")
+                    if (error.isNotEmpty()) {
+                        android.util.Log.e(TAG, "AISstream error: $error")
+                        ws.close(1000, "Error received")
+                        return
+                    }
                     val report = data.optJSONObject("Message")?.optJSONObject("PositionReport") ?: return
-                    val meta = data.optJSONObject("MetaData") ?: return
+                    val meta = data.optJSONObject("Metadata") ?: data.optJSONObject("MetaData") ?: return
                     val mmsi = meta.optLong("MMSI")
                     val vessel = AISVessel(
                         mmsi = mmsi,
@@ -75,26 +93,109 @@ class AISStreamService {
                         timestamp = System.currentTimeMillis()
                     )
                     vessels[mmsi] = vessel
+                    android.util.Log.d(TAG, "Vessel: ${vessel.name} at ${vessel.latitude},${vessel.longitude}")
                     // Prune stale
                     val cutoff = System.currentTimeMillis() - 600_000
                     val staleKeys = vessels.entries.filter { it.value.timestamp < cutoff }.map { it.key }
                     staleKeys.forEach { vessels.remove(it) }
                     _vesselFlow.value = vessels.values.toList()
                 } catch (e: Exception) {
-                    android.util.Log.w("AISStreamService", "Failed to parse AIS message", e)
+                    android.util.Log.w(TAG, "Failed to parse AIS message", e)
                 }
             }
 
             override fun onFailure(ws: WebSocket, t: Throwable, response: Response?) {
-                android.util.Log.e("AISStreamService", "WebSocket failure", t)
-                // Reconnect after delay
-                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                    if (webSocket != null) { // Only reconnect if not deliberately disconnected
-                        connect(lastApiKey, lastMinLat, lastMinLng, lastMaxLat, lastMaxLng)
-                    }
-                }, 5000)
+                android.util.Log.e(TAG, "WebSocket failure (attempt $reconnectAttempts)", t)
+                if (reconnectAttempts < maxReconnectAttempts && webSocket != null) {
+                    reconnectAttempts++
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        if (webSocket != null) {
+                            connect(lastApiKey, lastMinLat, lastMinLng, lastMaxLat, lastMaxLng)
+                        }
+                    }, 5000)
+                } else {
+                    android.util.Log.e(TAG, "Max reconnect attempts reached, giving up")
+                }
             }
         })
+    }
+
+    /**
+     * Test an API key by connecting briefly and checking for errors.
+     * Returns true if the key is accepted, false otherwise.
+     */
+    /**
+     * Test an API key by connecting and waiting for a valid AIS message.
+     * Returns success only if we receive actual data, failure if the connection drops.
+     */
+    /**
+     * Test an API key by connecting and waiting for actual vessel data.
+     * Fails if no data received within timeout or if server returns an error.
+     */
+    suspend fun testApiKey(apiKey: String): Result<Boolean> {
+        return kotlinx.coroutines.suspendCancellableCoroutine { cont ->
+            val request = Request.Builder()
+                .url("wss://stream.aisstream.io/v0/stream")
+                .build()
+
+            val testSocket = client.newWebSocket(request, object : WebSocketListener() {
+                override fun onOpen(ws: WebSocket, response: Response) {
+                    // Use global bounding box to maximize chance of receiving data
+                    val subscribeMsg = JSONObject().apply {
+                        put("APIKey", apiKey)
+                        put("BoundingBoxes", org.json.JSONArray().apply {
+                            put(org.json.JSONArray().apply {
+                                put(org.json.JSONArray().apply { put(-90.0); put(-180.0) })
+                                put(org.json.JSONArray().apply { put(90.0); put(180.0) })
+                            })
+                        })
+                    }
+                    ws.send(subscribeMsg.toString())
+                    // Timeout — if no data or error within 15 seconds, service is not responding
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        ws.close(1000, "Test timeout")
+                        if (cont.isActive) cont.resumeWith(kotlin.Result.success(
+                            Result.failure(Exception("No vessel data received. The AISstream service may be experiencing issues."))
+                        ))
+                    }, 15000)
+                }
+
+                override fun onMessage(ws: WebSocket, text: String) {
+                    val data = JSONObject(text)
+                    val error = data.optString("error", "")
+                    if (error.isNotEmpty()) {
+                        ws.close(1000, "Error received")
+                        if (cont.isActive) cont.resumeWith(kotlin.Result.success(
+                            Result.failure(Exception(error))
+                        ))
+                        return
+                    }
+                    // Got actual data — key works and service is operational
+                    ws.close(1000, "Test complete")
+                    if (cont.isActive) cont.resumeWith(kotlin.Result.success(Result.success(true)))
+                }
+
+                override fun onFailure(ws: WebSocket, t: Throwable, response: Response?) {
+                    if (cont.isActive) {
+                        cont.resumeWith(kotlin.Result.success(
+                            Result.failure(Exception("Connection failed: ${t.message}"))
+                        ))
+                    }
+                }
+
+                override fun onClosing(ws: WebSocket, code: Int, reason: String) {
+                    if (code != 1000 && cont.isActive) {
+                        cont.resumeWith(kotlin.Result.success(
+                            Result.failure(Exception("Connection rejected (code $code): $reason"))
+                        ))
+                    }
+                }
+            })
+
+            cont.invokeOnCancellation {
+                testSocket.close(1000, "Cancelled")
+            }
+        }
     }
 
     fun disconnect() {

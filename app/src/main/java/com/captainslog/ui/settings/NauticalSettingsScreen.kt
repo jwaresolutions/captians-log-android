@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -23,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.captainslog.nautical.NauticalProviders
 import com.captainslog.nautical.NauticalSettingsManager
+import com.captainslog.nautical.model.MapRole
 import com.captainslog.nautical.model.ProviderType
 import com.captainslog.nautical.tile.NauticalTileSources
 import org.osmdroid.config.Configuration
@@ -52,8 +55,10 @@ fun NauticalSettingsScreen(
                     provider = provider,
                     enabled = settings[provider.id]?.enabled ?: false,
                     apiKey = settings[provider.id]?.apiKey ?: "",
+                    apiKeyVerified = settings[provider.id]?.options?.get("apiKeyVerified") == "true",
                     onToggle = { settingsManager.toggleProvider(provider.id) },
-                    onApiKeyChange = { settingsManager.setApiKey(provider.id, it) }
+                    onApiKeyChange = { settingsManager.setApiKey(provider.id, it) },
+                    onApiKeyVerified = { verified -> settingsManager.setProviderOption(provider.id, "apiKeyVerified", verified.toString()) }
                 )
                 // Render child providers indented under parent
                 val parentEnabled = settings[provider.id]?.enabled ?: false
@@ -62,8 +67,10 @@ fun NauticalSettingsScreen(
                         provider = child,
                         enabled = settings[child.id]?.enabled ?: false,
                         apiKey = settings[child.id]?.apiKey ?: "",
+                        apiKeyVerified = settings[child.id]?.options?.get("apiKeyVerified") == "true",
                         onToggle = { settingsManager.toggleProvider(child.id) },
                         onApiKeyChange = { settingsManager.setApiKey(child.id, it) },
+                        onApiKeyVerified = { verified -> settingsManager.setProviderOption(child.id, "apiKeyVerified", verified.toString()) },
                         indent = true,
                         parentEnabled = parentEnabled
                     )
@@ -80,8 +87,10 @@ fun NauticalSettingsScreen(
                     provider = provider,
                     enabled = settings[provider.id]?.enabled ?: false,
                     apiKey = settings[provider.id]?.apiKey ?: "",
+                    apiKeyVerified = settings[provider.id]?.options?.get("apiKeyVerified") == "true",
                     onToggle = { settingsManager.toggleProvider(provider.id) },
-                    onApiKeyChange = { settingsManager.setApiKey(provider.id, it) }
+                    onApiKeyChange = { settingsManager.setApiKey(provider.id, it) },
+                    onApiKeyVerified = { verified -> settingsManager.setProviderOption(provider.id, "apiKeyVerified", verified.toString()) }
                 )
             }
         }
@@ -166,8 +175,10 @@ private fun ProviderCard(
     provider: NauticalProviderMeta,
     enabled: Boolean,
     apiKey: String,
+    apiKeyVerified: Boolean = false,
     onToggle: () -> Unit,
     onApiKeyChange: (String) -> Unit,
+    onApiKeyVerified: (Boolean) -> Unit = {},
     indent: Boolean = false,
     parentEnabled: Boolean = true
 ) {
@@ -217,6 +228,27 @@ private fun ProviderCard(
                             ),
                             modifier = Modifier.height(24.dp)
                         )
+                        AssistChip(
+                            onClick = {},
+                            label = {
+                                Text(
+                                    text = when (provider.mapRole) {
+                                        MapRole.BASE_MAP -> "Base Map"
+                                        MapRole.OVERLAY -> "Overlay"
+                                        MapRole.DATA -> "Data"
+                                    },
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            },
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = when (provider.mapRole) {
+                                    MapRole.BASE_MAP -> MaterialTheme.colorScheme.secondaryContainer
+                                    MapRole.OVERLAY -> MaterialTheme.colorScheme.tertiaryContainer
+                                    MapRole.DATA -> MaterialTheme.colorScheme.surfaceVariant
+                                }
+                            ),
+                            modifier = Modifier.height(24.dp)
+                        )
                     }
                     if (!expanded) {
                         Text(
@@ -230,7 +262,7 @@ private fun ProviderCard(
                 Switch(
                     checked = enabled && parentEnabled,
                     onCheckedChange = { onToggle() },
-                    enabled = parentEnabled
+                    enabled = parentEnabled && (!provider.requiresApiKey || apiKeyVerified)
                 )
 
                 Icon(
@@ -284,13 +316,81 @@ private fun ProviderCard(
 
                     // API Key input
                     if (provider.requiresApiKey) {
+                        var localApiKey by remember(apiKey) { mutableStateOf(apiKey) }
+                        var testState by remember { mutableStateOf<ApiKeyTestState>(ApiKeyTestState.Idle) }
+                        val coroutineScope = rememberCoroutineScope()
+
                         OutlinedTextField(
-                            value = apiKey,
-                            onValueChange = onApiKeyChange,
+                            value = localApiKey,
+                            onValueChange = {
+                                localApiKey = it
+                                testState = ApiKeyTestState.Idle
+                                onApiKeyVerified(false)
+                                if (enabled) onToggle() // Disable provider when key changes
+                            },
                             label = { Text("API Key") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Button(
+                                onClick = {
+                                    onApiKeyChange(localApiKey)
+                                    if (provider.id == "aisstream" && localApiKey.isNotBlank()) {
+                                        testState = ApiKeyTestState.Testing
+                                        coroutineScope.launch {
+                                            val result = com.captainslog.nautical.service.AISStreamService().testApiKey(localApiKey)
+                                            if (result.isSuccess) {
+                                                testState = ApiKeyTestState.Success
+                                                onApiKeyVerified(true)
+                                            } else {
+                                                testState = ApiKeyTestState.Failed(result.exceptionOrNull()?.message ?: "Connection failed")
+                                                onApiKeyVerified(false)
+                                            }
+                                        }
+                                    } else {
+                                        testState = ApiKeyTestState.Saved
+                                    }
+                                },
+                                enabled = localApiKey.isNotBlank() && testState != ApiKeyTestState.Testing
+                            ) {
+                                if (testState == ApiKeyTestState.Testing) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Testing...")
+                                } else {
+                                    Text(if (provider.id == "aisstream") "Save & Test" else "Save")
+                                }
+                            }
+
+                            when (testState) {
+                                is ApiKeyTestState.Success -> Text(
+                                    "Connected successfully",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                is ApiKeyTestState.Saved -> Text(
+                                    "Saved",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                is ApiKeyTestState.Failed -> Text(
+                                    (testState as ApiKeyTestState.Failed).message,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                                else -> {}
+                            }
+                        }
+
                         provider.apiKeySignupUrl?.let { url ->
                             TextButton(
                                 onClick = {
@@ -434,4 +534,12 @@ private fun formatBytes(bytes: Long): String = when {
     bytes < 1024 -> "$bytes B"
     bytes < 1024 * 1024 -> "${"%.1f".format(bytes / 1024.0)} KB"
     else -> "${"%.1f".format(bytes / (1024.0 * 1024.0))} MB"
+}
+
+private sealed class ApiKeyTestState {
+    data object Idle : ApiKeyTestState()
+    data object Testing : ApiKeyTestState()
+    data object Success : ApiKeyTestState()
+    data object Saved : ApiKeyTestState()
+    data class Failed(val message: String) : ApiKeyTestState()
 }

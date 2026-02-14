@@ -44,11 +44,21 @@ class MapViewModel @Inject constructor(
     val uiState: StateFlow<MapUiState> = _uiState.asStateFlow()
     private val aisStreamService = AISStreamService()
     private var aisCollectionJob: kotlinx.coroutines.Job? = null
+    private var lastViewport: DoubleArray? = null
 
     init {
         // Load initial data
         loadTrips()
         loadMarkedLocations()
+
+        // Re-trigger nautical data when settings change (e.g. API key saved)
+        viewModelScope.launch {
+            nauticalSettingsManager.settings.collect {
+                lastViewport?.let { vp ->
+                    loadNauticalData(vp[0], vp[1], vp[2], vp[3])
+                }
+            }
+        }
     }
 
     /**
@@ -334,6 +344,7 @@ class MapViewModel @Inject constructor(
      * Load nautical data based on current map viewport
      */
     fun loadNauticalData(minLat: Double, minLng: Double, maxLat: Double, maxLng: Double) {
+        lastViewport = doubleArrayOf(minLat, minLng, maxLat, maxLng)
         val centerLat = (minLat + maxLat) / 2
         val centerLng = (minLng + maxLng) / 2
 

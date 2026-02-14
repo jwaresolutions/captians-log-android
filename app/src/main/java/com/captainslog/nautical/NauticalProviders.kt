@@ -13,7 +13,8 @@ object NauticalProviders {
             website = "https://openseamap.org",
             features = listOf("Completely free", "Community maintained", "Global coverage"),
             warnings = listOf("Limited detail in some regions", "Community-dependent updates"),
-            requiresApiKey = false
+            requiresApiKey = false,
+            mapRole = MapRole.OVERLAY
         ),
         NauticalProviderMeta(
             id = "noaa-charts",
@@ -24,7 +25,8 @@ object NauticalProviders {
             website = "https://nauticalcharts.noaa.gov",
             features = listOf("Official government data", "Depth soundings and hazards", "Free to use", "Viewed areas cached for offline use"),
             warnings = listOf("US coastal waters only", "Internet required to load new areas", "Can be slow on first load"),
-            requiresApiKey = false
+            requiresApiKey = false,
+            mapRole = MapRole.BASE_MAP
         ),
         NauticalProviderMeta(
             id = "gebco",
@@ -35,7 +37,8 @@ object NauticalProviders {
             website = "https://www.gebco.net",
             features = listOf("Global ocean depth data", "Free to use", "Scientific quality"),
             warnings = listOf("Lower resolution in some areas", "Pixelated when zoomed in past level 12", "First load can be slow (tiles are cached after)"),
-            requiresApiKey = false
+            requiresApiKey = false,
+            mapRole = MapRole.BASE_MAP
         ),
         NauticalProviderMeta(
             id = "noaa-coops",
@@ -57,7 +60,7 @@ object NauticalProviders {
             description = "Real-time coastal AIS vessel tracking via WebSocket.",
             website = "https://aisstream.io",
             features = listOf("Real-time vessel positions", "WebSocket streaming", "Free tier available"),
-            warnings = listOf("Requires free API key", "Coastal coverage only"),
+            warnings = listOf("Requires free API key", "Coastal coverage only", "Service can be unreliable"),
             requiresApiKey = true,
             apiKeySignupUrl = "https://aisstream.io/authenticate"
         ),
@@ -109,7 +112,8 @@ object NauticalProviders {
             warnings = listOf("Expensive", "API key required"),
             requiresApiKey = true,
             apiKeySignupUrl = "https://api.windy.com/signup",
-            pricingNote = "~\$720/year"
+            pricingNote = "~\$720/year",
+            mapRole = MapRole.OVERLAY
         ),
         NauticalProviderMeta(
             id = "navionics",
@@ -122,7 +126,8 @@ object NauticalProviders {
             warnings = listOf("Expensive", "Contact for pricing", "Complex integration"),
             requiresApiKey = true,
             apiKeySignupUrl = "https://developer.navionics.com",
-            pricingNote = "Contact Garmin/Navionics for pricing"
+            pricingNote = "Contact Garmin/Navionics for pricing",
+            mapRole = MapRole.BASE_MAP
         ),
         NauticalProviderMeta(
             id = "marinetraffic",
