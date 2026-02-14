@@ -31,3 +31,4 @@
 # Keep data models
 -keep class com.captainslog.database.entities.** { *; }
 -keep class com.captainslog.network.models.** { *; }
+-keep class com.captainslog.sharing.models.** { *; }

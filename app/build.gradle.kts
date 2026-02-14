@@ -21,6 +21,18 @@ android {
     namespace = "com.captainslog"
     compileSdk = 35
 
+    signingConfigs {
+        create("release") {
+            val keystoreFile = file(envProps.getProperty("KEYSTORE_FILE", "../keystore/release.jks"))
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = envProps.getProperty("KEYSTORE_PASSWORD", "")
+                keyAlias = envProps.getProperty("KEY_ALIAS", "captainslog")
+                keyPassword = envProps.getProperty("KEY_PASSWORD", "")
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "com.captainslog"
         minSdk = 26
@@ -47,11 +59,13 @@ android {
             buildConfigField("String", "DEFAULT_SERVER_URL", "\"$defaultServerUrl\"")
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
             // Require HTTPS and certificate pinning in production
             buildConfigField("Boolean", "ALLOW_HTTP", "false")
             buildConfigField("Boolean", "REQUIRE_CERT_PINNING", "true")
