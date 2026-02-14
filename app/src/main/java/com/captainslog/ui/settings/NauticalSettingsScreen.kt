@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.captainslog.nautical.NauticalProviders
 import com.captainslog.nautical.NauticalSettingsManager
+import com.captainslog.nautical.model.ProviderType
+import com.captainslog.nautical.tile.NauticalTileSources
+import org.osmdroid.config.Configuration
 import com.captainslog.nautical.model.NauticalProviderMeta
 import com.captainslog.nautical.model.ProviderTier
 import com.captainslog.viewmodel.MainNavigationViewModel
@@ -65,6 +69,79 @@ fun NauticalSettingsScreen(
                     apiKey = settings[provider.id]?.apiKey ?: "",
                     onToggle = { settingsManager.toggleProvider(provider.id) },
                     onApiKeyChange = { settingsManager.setApiKey(provider.id, it) }
+                )
+            }
+        }
+
+        HorizontalDivider()
+
+        // Clear all tile cache
+        SettingsSection(title = "Cache") {
+            var showConfirmDialog by remember { mutableStateOf(false) }
+            var cacheSize by remember { mutableStateOf(getAllCacheSize()) }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "All Map Tiles",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = cacheSize,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    OutlinedButton(
+                        onClick = { showConfirmDialog = true },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Clear All")
+                    }
+                }
+            }
+
+            if (showConfirmDialog) {
+                AlertDialog(
+                    onDismissRequest = { showConfirmDialog = false },
+                    title = { Text("Clear All Tile Cache") },
+                    text = { Text("This will delete all cached map tiles for every provider. They will be re-downloaded as needed.") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            clearAllCache()
+                            cacheSize = getAllCacheSize()
+                            showConfirmDialog = false
+                        }) {
+                            Text("Clear All", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showConfirmDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
                 )
             }
         }
@@ -239,8 +316,106 @@ private fun ProviderCard(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Visit website")
                     }
+
+                    // Per-provider cache management for tile providers
+                    if (provider.type == ProviderType.TILE) {
+                        val tileName = NauticalTileSources.getSourceById(provider.id)?.name()
+                        if (tileName != null) {
+                            var cacheSize by remember { mutableStateOf(getProviderCacheSize(tileName)) }
+                            var showClearDialog by remember { mutableStateOf(false) }
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Cached tiles",
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                    Text(
+                                        text = cacheSize,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                OutlinedButton(
+                                    onClick = { showClearDialog = true },
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.error
+                                    )
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Clear Cache", style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+
+                            if (showClearDialog) {
+                                AlertDialog(
+                                    onDismissRequest = { showClearDialog = false },
+                                    title = { Text("Clear ${provider.name} Cache") },
+                                    text = { Text("Delete cached tiles for ${provider.name}? They will be re-downloaded as needed.") },
+                                    confirmButton = {
+                                        TextButton(onClick = {
+                                            clearProviderCache(tileName)
+                                            cacheSize = getProviderCacheSize(tileName)
+                                            showClearDialog = false
+                                        }) {
+                                            Text("Clear", color = MaterialTheme.colorScheme.error)
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { showClearDialog = false }) {
+                                            Text("Cancel")
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
     }
+}
+
+private fun getProviderCacheSize(tileName: String): String {
+    val cacheDir = java.io.File(Configuration.getInstance().osmdroidTileCache, tileName)
+    if (!cacheDir.exists()) return "Empty"
+    val bytes = cacheDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+    return formatBytes(bytes)
+}
+
+private fun clearProviderCache(tileName: String) {
+    val cacheDir = java.io.File(Configuration.getInstance().osmdroidTileCache, tileName)
+    if (cacheDir.exists()) {
+        cacheDir.deleteRecursively()
+    }
+}
+
+private fun getAllCacheSize(): String {
+    val cacheDir = Configuration.getInstance().osmdroidTileCache
+    if (!cacheDir.exists()) return "Empty"
+    val bytes = cacheDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+    return formatBytes(bytes)
+}
+
+private fun clearAllCache() {
+    val cacheDir = Configuration.getInstance().osmdroidTileCache
+    if (cacheDir.exists()) {
+        cacheDir.deleteRecursively()
+    }
+}
+
+private fun formatBytes(bytes: Long): String = when {
+    bytes < 1024 -> "$bytes B"
+    bytes < 1024 * 1024 -> "${"%.1f".format(bytes / 1024.0)} KB"
+    else -> "${"%.1f".format(bytes / (1024.0 * 1024.0))} MB"
 }

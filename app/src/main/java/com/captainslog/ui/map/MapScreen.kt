@@ -240,6 +240,7 @@ fun MapScreen(
             uiState = uiState,
             enabledProviderIds = viewModel.getEnabledProviderIds(),
             onToggleProvider = { id -> viewModel.toggleNauticalLayerVisibility(id) },
+            onBaseMapModeChange = { mode -> viewModel.setBaseMapMode(mode) },
             onFilterChange = { filter ->
                 viewModel.updateFilter(filter)
             },
@@ -322,6 +323,14 @@ private fun onViewportChanged(
         updateTime(now)
         val bb = mapView.boundingBox
         viewModel.loadNauticalData(bb.latSouth, bb.lonWest, bb.latNorth, bb.lonEast)
+
+        // Save last map center for tile preloading on next launch
+        val center = mapView.mapCenter
+        mapView.context.getSharedPreferences("captains_log_prefs", android.content.Context.MODE_PRIVATE)
+            .edit()
+            .putFloat("last_map_lat", center.latitude.toFloat())
+            .putFloat("last_map_lon", center.longitude.toFloat())
+            .apply()
     }
 }
 
@@ -369,17 +378,24 @@ private fun updateMapOverlays(
     mapView.overlayManager.clear()
     locationOverlay.forEach { mapView.overlayManager.add(it) }
 
-    // 2. Add nautical tile overlays (per-provider visibility) with cached providers
-    NauticalTileSources.tileProviderIds.forEach { id ->
-        if (viewModel.isNauticalLayerVisible(id)) {
-            val tileSource = NauticalTileSources.getSourceById(id) ?: return@forEach
-            val provider = tileProviderCache.getOrPut(id) {
-                MapTileProviderBasic(mapView.context, tileSource)
+    // 2. Handle base map mode
+    if (uiState.baseMapMode == "noaa-charts") {
+        // NOAA Charts as base map — replace tile source, skip overlays
+        mapView.setTileSource(NauticalTileSources.noaaCharts)
+    } else {
+        // Standard OSM base map + nautical tile overlays
+        mapView.setTileSource(TileSourceFactory.MAPNIK)
+        NauticalTileSources.tileProviderIds.forEach { id ->
+            if (viewModel.isNauticalLayerVisible(id)) {
+                val tileSource = NauticalTileSources.getSourceById(id) ?: return@forEach
+                val provider = tileProviderCache.getOrPut(id) {
+                    MapTileProviderBasic(mapView.context, tileSource)
+                }
+                val overlay = TilesOverlay(provider, mapView.context)
+                overlay.setLoadingBackgroundColor(android.graphics.Color.TRANSPARENT)
+                overlay.setLoadingLineColor(android.graphics.Color.TRANSPARENT)
+                mapView.overlayManager.add(overlay)
             }
-            val overlay = TilesOverlay(provider, mapView.context)
-            overlay.setLoadingBackgroundColor(android.graphics.Color.TRANSPARENT)
-            overlay.setLoadingLineColor(android.graphics.Color.TRANSPARENT)
-            mapView.overlayManager.add(overlay)
         }
     }
 
@@ -562,9 +578,12 @@ private fun MapControlsOverlay(
     uiState: MapUiState,
     enabledProviderIds: List<String>,
     onToggleProvider: (String) -> Unit,
+    onBaseMapModeChange: (String) -> Unit,
     onFilterChange: (MapFilter) -> Unit,
     onRefresh: () -> Unit
 ) {
+    val isNoaaBase = uiState.baseMapMode == "noaa-charts"
+
     Card(
         modifier = modifier.padding(16.dp),
         shape = RoundedCornerShape(8.dp),
@@ -582,27 +601,46 @@ private fun MapControlsOverlay(
                 fontWeight = FontWeight.Bold
             )
 
-            // Per-provider nautical layer chips
+            // Base map selector
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.horizontalScroll(rememberScrollState())
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                enabledProviderIds.forEach { id ->
-                    val providerName = NauticalProviders.getById(id)?.name ?: id
-                    val isVisible = uiState.nauticalLayerVisibility[id] ?: true
-                    FilterChip(
-                        selected = isVisible,
-                        onClick = { onToggleProvider(id) },
-                        label = { Text(providerName, style = MaterialTheme.typography.labelSmall) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
-                    )
+                FilterChip(
+                    selected = !isNoaaBase,
+                    onClick = { onBaseMapModeChange("osm") },
+                    label = { Text("Standard", style = MaterialTheme.typography.labelSmall) }
+                )
+                FilterChip(
+                    selected = isNoaaBase,
+                    onClick = { onBaseMapModeChange("noaa-charts") },
+                    label = { Text("NOAA Charts", style = MaterialTheme.typography.labelSmall) }
+                )
+            }
+
+            // Per-provider nautical layer chips (hidden when NOAA Charts is base map)
+            if (!isNoaaBase) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.horizontalScroll(rememberScrollState())
+                ) {
+                    enabledProviderIds.forEach { id ->
+                        val providerName = NauticalProviders.getById(id)?.name ?: id
+                        val isVisible = uiState.nauticalLayerVisibility[id] ?: true
+                        FilterChip(
+                            selected = isVisible,
+                            onClick = { onToggleProvider(id) },
+                            label = { Text(providerName, style = MaterialTheme.typography.labelSmall) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Settings,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        )
+                    }
                 }
             }
 

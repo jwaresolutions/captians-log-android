@@ -20,10 +20,10 @@ object NauticalProviders {
             name = "NOAA Charts",
             tier = ProviderTier.FREE,
             type = ProviderType.TILE,
-            description = "Official US nautical charts from NOAA via WMTS tile service.",
-            website = "https://charts.noaa.gov",
-            features = listOf("Official government data", "High accuracy for US waters", "Free to use"),
-            warnings = listOf("US waters only", "Can be slow to update"),
+            description = "Official US coastal nautical charts from NOAA showing depths, hazards, channels, and aids to navigation.",
+            website = "https://nauticalcharts.noaa.gov",
+            features = listOf("Official government data", "Depth soundings and hazards", "Free to use", "Viewed areas cached for offline use"),
+            warnings = listOf("US coastal waters only", "Internet required to load new areas", "Can be slow on first load"),
             requiresApiKey = false
         ),
         NauticalProviderMeta(

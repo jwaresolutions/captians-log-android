@@ -405,6 +405,13 @@ class MapViewModel @Inject constructor(
     }
 
     /**
+     * Set the base map mode ("osm" or "noaa-charts")
+     */
+    fun setBaseMapMode(mode: String) {
+        _uiState.value = _uiState.value.copy(baseMapMode = mode)
+    }
+
+    /**
      * Toggle visibility of a specific nautical layer on the map
      */
     fun toggleNauticalLayerVisibility(providerId: String) {
@@ -458,7 +465,9 @@ data class MapUiState(
     val marineWeather: MarineWeather? = null,
     val enabledNauticalLayers: Set<String> = emptySet(),
     // Per-layer visibility on map (separate from settings enabled)
-    val nauticalLayerVisibility: Map<String, Boolean> = emptyMap()
+    val nauticalLayerVisibility: Map<String, Boolean> = emptyMap(),
+    // Base map mode: "osm" (default) or "noaa-charts"
+    val baseMapMode: String = "osm"
 )
 
 /**
