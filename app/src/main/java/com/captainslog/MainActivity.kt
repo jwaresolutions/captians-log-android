@@ -1,5 +1,6 @@
 package com.captainslog
 
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -137,6 +138,28 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun MainApp() {
+        val context = LocalContext.current
+        val prefs = remember { context.getSharedPreferences("captains_log_prefs", Context.MODE_PRIVATE) }
+        var showDisclaimer by remember { mutableStateOf(!prefs.getBoolean("beta_disclaimer_shown", false)) }
+
+        if (showDisclaimer) {
+            AlertDialog(
+                onDismissRequest = { },
+                title = { Text("Early Access Beta") },
+                text = {
+                    Text("Thanks for trying Captain's Log! This is an early beta — things may change, break, or improve as development continues. Some features may become part of a future Pro upgrade, but your data will always be preserved. We appreciate your feedback!")
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        prefs.edit().putBoolean("beta_disclaimer_shown", true).apply()
+                        showDisclaimer = false
+                    }) {
+                        Text("Got It")
+                    }
+                }
+            )
+        }
+
         MainAppContent()
     }
 

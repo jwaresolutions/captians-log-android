@@ -1,0 +1,4 @@
+services:
+  web:
+    image: ghcr.io/jwaresolutions/captains-log-android-web:latest
+    restart: always

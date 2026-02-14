@@ -75,6 +75,7 @@ fun SettingsScreen(
     var isImporting by remember { mutableStateOf(false) }
     var showImportConfirmDialog by remember { mutableStateOf(false) }
     var pendingImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var showPrivacyPolicy by remember { mutableStateOf(false) }
 
     val conflictLogger = remember { ConflictLogger(context) }
     val securePreferences = remember { SecurePreferences(context) }
@@ -330,6 +331,12 @@ fun SettingsScreen(
             SettingsSection(title = "About") {
                 SettingsItem(
                     icon = Icons.Default.Info,
+                    title = "Privacy Policy",
+                    subtitle = "How your data is handled",
+                    onClick = { showPrivacyPolicy = true }
+                )
+                SettingsItem(
+                    icon = Icons.Default.Info,
                     title = "App Version",
                     subtitle = "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                     onClick = null
@@ -383,6 +390,54 @@ fun SettingsScreen(
                     pendingImportUri = null
                 }) {
                     Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Privacy Policy dialog
+    if (showPrivacyPolicy) {
+        AlertDialog(
+            onDismissRequest = { showPrivacyPolicy = false },
+            title = { Text("Privacy Policy") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        text = """Captain's Log Privacy Policy
+Last updated: February 2026
+
+Your privacy matters. Here's how Captain's Log handles your data:
+
+Location Data
+GPS data is collected solely for trip tracking purposes. All location data is stored locally on your device.
+
+Photos
+Photos you capture are stored locally on your device and are never transmitted unless you explicitly sync with a server.
+
+Bluetooth
+Bluetooth is used only for optional sensor connections (e.g., wind instruments).
+
+Camera
+The camera is used for QR code scanning and trip photos.
+
+Network Access
+Network access is used only for optional server synchronization, which is always user-initiated.
+
+No Tracking
+Captain's Log contains no third-party analytics, advertising SDKs, or tracking software.
+
+Your Data Stays Yours
+Your data is never sold or shared with third parties. All data remains on your device unless you explicitly connect to a server for synchronization.
+
+Contact
+For questions about this policy, visit boat.jware.dev.""",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showPrivacyPolicy = false }) {
+                    Text("Close")
                 }
             }
         )

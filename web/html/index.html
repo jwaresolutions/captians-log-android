@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Captain's Log - Your Digital Ship's Log. GPS trip tracking, photo logs, crew management, and maintenance tracking for boaters.">
+    <title>Captain's Log - Your Digital Ship's Log</title>
+    <link rel="stylesheet" href="/shared.css">
+    <style>
+        .container {
+            justify-content: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            animation: fadeIn 1s ease 0.2s both;
+        }
+
+        .tagline {
+            font-size: 1.3rem;
+            font-weight: 300;
+            color: rgba(255, 153, 51, 0.9);
+            text-align: center;
+            margin-bottom: 2.5rem;
+            animation: fadeIn 1s ease 0.4s both;
+        }
+
+        .description {
+            font-size: 1.05rem;
+            color: #bbb;
+            text-align: center;
+            max-width: 600px;
+            margin-bottom: 2.5rem;
+            line-height: 1.8;
+            animation: fadeIn 1s ease 0.6s both;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            width: 100%;
+            margin-bottom: 2.5rem;
+            animation: fadeIn 1s ease 0.8s both;
+        }
+
+        .feature {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid rgba(255, 153, 51, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .feature h3 {
+            color: #ff9933;
+            margin-bottom: 8px;
+            font-size: 1.05rem;
+        }
+
+        .feature p {
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .cta-section {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: fadeIn 1s ease 1s both;
+        }
+
+        .play-badge {
+            display: inline-block;
+            padding: 14px 32px;
+            background: rgba(255, 153, 51, 0.15);
+            color: #ff9933;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 153, 51, 0.4);
+            font-weight: 600;
+            font-size: 1.05rem;
+            transition: all 0.3s ease;
+        }
+
+        .play-badge:hover {
+            background: rgba(255, 153, 51, 0.25);
+            border-color: rgba(255, 153, 51, 0.7);
+        }
+
+        .links {
+            text-align: center;
+            animation: fadeIn 1s ease 1.2s both;
+        }
+
+        .links a {
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .links a:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .tagline { font-size: 1.1rem; }
+            .features { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="starfield"></canvas>
+
+    <div class="page-content">
+        <div class="container">
+            <img class="logo logo-large" src="/captains-log-logo.png" alt="Captain's Log">
+
+            <h1>Captain's Log</h1>
+            <p class="tagline">Your Digital Ship's Log</p>
+
+            <p class="description">
+                The complete boating companion for sailors and boaters.
+                Track journeys with GPS precision, document adventures with photo logs,
+                manage your crew, and keep your vessel in top condition.
+            </p>
+
+            <div class="features">
+                <div class="feature">
+                    <h3>GPS Trip Tracking</h3>
+                    <p>Record every nautical mile with precise GPS tracking. Review routes, speed, and distance.</p>
+                </div>
+                <div class="feature">
+                    <h3>Photo Logs</h3>
+                    <p>Capture memories on the water. Attach photos to trips and build a visual record.</p>
+                </div>
+                <div class="feature">
+                    <h3>Crew Management</h3>
+                    <p>Track crew members with QR code integration. Manage contacts and share trip data.</p>
+                </div>
+                <div class="feature">
+                    <h3>Maintenance Tracking</h3>
+                    <p>Stay on top of vessel maintenance. Log repairs and track service schedules.</p>
+                </div>
+            </div>
+
+            <div class="cta-section">
+                <a href="#" class="play-badge">Coming Soon to Google Play</a>
+            </div>
+
+            <div class="links">
+                <a href="/privacy/">Privacy Policy</a>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 JWare Solutions</p>
+        </footer>
+    </div>
+
+    <script src="/starfield.js"></script>
+</body>
+</html>
