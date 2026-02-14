@@ -108,3 +108,7 @@ lint-results_files/
 
 # Android Profiling
 *.hprof
+
+# AI/Claude tooling
+.omc/
+.claude/

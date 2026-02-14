@@ -34,7 +34,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.captainslog"
+        applicationId = "com.jware.captainslog"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
