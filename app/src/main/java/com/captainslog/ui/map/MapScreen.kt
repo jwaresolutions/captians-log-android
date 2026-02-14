@@ -3,7 +3,6 @@ package com.captainslog.ui.map
 import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Location
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
@@ -89,6 +88,11 @@ fun MapScreen(
 
     // Debounce tracker for viewport changes
     var lastViewportCallTime by remember { mutableStateOf(0L) }
+
+    // Cache tile providers so they persist across recompositions
+    val nauticalTileProviders = remember {
+        mutableMapOf<String, MapTileProviderBasic>()
+    }
 
     // Location permission launcher
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -179,7 +183,7 @@ fun MapScreen(
                 }
             },
             update = { mapViewInstance ->
-                updateMapOverlays(mapViewInstance, uiState, viewModel)
+                updateMapOverlays(mapViewInstance, uiState, viewModel, nauticalTileProviders)
             }
         )
 
@@ -353,21 +357,27 @@ private fun addLocationOverlay(mapView: MapView, context: android.content.Contex
  * Update all map overlays based on UI state.
  * This is the SOLE owner of overlay management -- no other function adds overlays.
  */
-private fun updateMapOverlays(mapView: MapView, uiState: MapUiState, viewModel: MapViewModel) {
-    // 1. Clear ALL overlays except MyLocationNewOverlay
+private fun updateMapOverlays(
+    mapView: MapView,
+    uiState: MapUiState,
+    viewModel: MapViewModel,
+    tileProviderCache: MutableMap<String, MapTileProviderBasic>
+) {
+    // 1. Clear ALL overlays except MyLocationNewOverlay and TilesOverlay
     val locationOverlay = mapView.overlayManager.filterIsInstance<MyLocationNewOverlay>()
     mapView.overlayManager.clear()
     locationOverlay.forEach { mapView.overlayManager.add(it) }
 
-    // 2. Add nautical tile overlays (per-provider visibility)
+    // 2. Add nautical tile overlays (per-provider visibility) with cached providers
     NauticalTileSources.tileProviderIds.forEach { id ->
         if (viewModel.isNauticalLayerVisible(id)) {
             val tileSource = NauticalTileSources.getSourceById(id) ?: return@forEach
-            val overlay = TilesOverlay(
-                MapTileProviderBasic(mapView.context, tileSource),
-                mapView.context
-            )
+            val provider = tileProviderCache.getOrPut(id) {
+                MapTileProviderBasic(mapView.context, tileSource)
+            }
+            val overlay = TilesOverlay(provider, mapView.context)
             overlay.setLoadingBackgroundColor(android.graphics.Color.TRANSPARENT)
+            overlay.setLoadingLineColor(android.graphics.Color.TRANSPARENT)
             mapView.overlayManager.add(overlay)
         }
     }
