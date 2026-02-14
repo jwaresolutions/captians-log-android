@@ -15,6 +15,7 @@ import com.captainslog.ui.components.BreadcrumbItem
 @Composable
 fun TripNavigation(
     modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier,
+    database: com.captainslog.database.AppDatabase,
     viewModel: TripTrackingViewModel = hiltViewModel(),
     boatViewModel: BoatViewModel = hiltViewModel(),
     onBreadcrumbChanged: (List<BreadcrumbItem>, (() -> Unit)?) -> Unit = { _, _ -> }
@@ -47,10 +48,14 @@ fun TripNavigation(
         val crumbs = when {
             shareTripId != null -> listOf(BreadcrumbItem("Trips"), BreadcrumbItem("Share Trip"))
             currentScreen == TripScreen.TripDetail -> listOf(BreadcrumbItem("Trip Detail"))
+            currentScreen == TripScreen.ShareTripCrew -> listOf(BreadcrumbItem("Trips"), BreadcrumbItem("Share Trip Crew"))
+            currentScreen == TripScreen.ScanTripCrew -> listOf(BreadcrumbItem("Trips"), BreadcrumbItem("Join Trip"))
             else -> emptyList()
         }
         val backToRoot: (() -> Unit)? = when {
             shareTripId != null -> { { shareTripId = null } }
+            currentScreen == TripScreen.ShareTripCrew -> { { currentScreen = TripScreen.TripList } }
+            currentScreen == TripScreen.ScanTripCrew -> { { currentScreen = TripScreen.TripList } }
             currentScreen != TripScreen.TripList -> { { currentScreen = TripScreen.TripList; selectedTripId = null } }
             else -> null
         }
@@ -122,6 +127,9 @@ fun TripNavigation(
                 onShareTrip = { tripId ->
                     shareTripId = tripId
                 },
+                onJoinTrip = {
+                    currentScreen = TripScreen.ScanTripCrew
+                },
                 modifier = modifier
             )
         }
@@ -130,21 +138,24 @@ fun TripNavigation(
                 val trip = trips.find { it.id == tripId }
                 val gpsPoints by viewModel.getGpsPointsForTrip(tripId)
                     .collectAsState(initial = emptyList())
-                
+                val crewMembers by database.crewMemberDao().getCrewForTrip(tripId)
+                    .collectAsState(initial = emptyList())
+
                 var statistics by remember { mutableStateOf<com.captainslog.repository.TripStatistics?>(null) }
-                
+
                 LaunchedEffect(tripId) {
                     scope.launch {
                         statistics = viewModel.calculateTripStatistics(tripId)
                     }
                 }
-                
+
                 if (trip != null) {
                     TripDetailScreen(
                         trip = trip,
                         gpsPoints = gpsPoints,
                         statistics = statistics,
                         boats = boats,
+                        crewMembers = crewMembers,
                         onNavigateBack = {
                             currentScreen = TripScreen.TripList
                             selectedTripId = null
@@ -158,10 +169,39 @@ fun TripNavigation(
                             scope.launch {
                                 viewModel.updateTripManualData(updatedTrip)
                             }
+                        },
+                        onShareWithCrew = {
+                            currentScreen = TripScreen.ShareTripCrew
+                        },
+                        onJoinTrip = {
+                            currentScreen = TripScreen.ScanTripCrew
                         }
                     )
                 }
             }
+        }
+        currentScreen == TripScreen.ShareTripCrew -> {
+            selectedTripId?.let { tripId ->
+                com.captainslog.ui.sharing.ShareTripCrewScreen(
+                    tripId = tripId,
+                    onBack = {
+                        currentScreen = TripScreen.TripDetail
+                    },
+                    database = database
+                )
+            }
+        }
+        currentScreen == TripScreen.ScanTripCrew -> {
+            com.captainslog.ui.sharing.ScanTripCrewScreen(
+                onBack = {
+                    currentScreen = TripScreen.TripList
+                },
+                onTripJoined = { tripId ->
+                    selectedTripId = tripId
+                    currentScreen = TripScreen.TripDetail
+                },
+                database = database
+            )
         }
     }
 }
@@ -172,4 +212,6 @@ fun TripNavigation(
 sealed class TripScreen {
     object TripList : TripScreen()
     object TripDetail : TripScreen()
+    object ShareTripCrew : TripScreen()
+    object ScanTripCrew : TripScreen()
 }

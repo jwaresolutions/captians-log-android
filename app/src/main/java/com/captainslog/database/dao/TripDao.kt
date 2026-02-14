@@ -47,4 +47,7 @@ interface TripDao {
 
     @Query("SELECT * FROM trips ORDER BY startTime DESC")
     suspend fun getAllTripsSync(): List<TripEntity>
+
+    @Query("SELECT * FROM trips WHERE captainTripId = :captainTripId LIMIT 1")
+    suspend fun getTripByCaptainTripId(captainTripId: String): TripEntity?
 }

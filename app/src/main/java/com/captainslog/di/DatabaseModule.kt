@@ -4,6 +4,7 @@ import android.content.Context
 import com.captainslog.database.AppDatabase
 import com.captainslog.database.dao.*
 import com.captainslog.database.migrations.MIGRATION_9_10
+import com.captainslog.database.migrations.MIGRATION_10_11
 import androidx.room.Room
 import dagger.Module
 import dagger.Provides
@@ -24,8 +25,8 @@ object DatabaseModule {
             AppDatabase::class.java,
             "boat_tracking_database"
         )
-            .addMigrations(MIGRATION_9_10)
-            .fallbackToDestructiveMigrationOnDowngrade()
+            .addMigrations(MIGRATION_9_10, MIGRATION_10_11)
+            .fallbackToDestructiveMigration()
             .build()
     }
 
@@ -40,4 +41,5 @@ object DatabaseModule {
     @Provides fun provideMaintenanceEventDao(db: AppDatabase): MaintenanceEventDao = db.maintenanceEventDao()
     @Provides fun provideMarkedLocationDao(db: AppDatabase): MarkedLocationDao = db.markedLocationDao()
     @Provides fun provideOfflineChangeDao(db: AppDatabase): OfflineChangeDao = db.offlineChangeDao()
+    @Provides fun provideCrewMemberDao(db: AppDatabase): CrewMemberDao = db.crewMemberDao()
 }

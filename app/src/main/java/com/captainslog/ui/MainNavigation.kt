@@ -182,6 +182,7 @@ fun MainNavigation(
                     NavigationTab.Trips -> {
                         TripNavigation(
                             modifier = Modifier.padding(paddingValues),
+                            database = viewModel.database,
                             onBreadcrumbChanged = { crumbs, backToRoot ->
                                 nestedBreadcrumbs = crumbs
                                 childBackHandler = backToRoot

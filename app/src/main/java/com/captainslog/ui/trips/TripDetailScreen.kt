@@ -13,6 +13,7 @@ import com.captainslog.bluetooth.BluetoothConnectionState
 import com.captainslog.bluetooth.SensorData
 import com.captainslog.database.entities.GpsPointEntity
 import com.captainslog.database.entities.TripEntity
+import com.captainslog.database.entities.CrewMemberEntity
 import com.captainslog.repository.TripStatistics
 import com.captainslog.ui.sensors.CompactSensorDataDisplay
 import com.captainslog.ui.components.DetailRow
@@ -30,9 +31,12 @@ fun TripDetailScreen(
     gpsPoints: List<GpsPointEntity>,
     statistics: TripStatistics?,
     boats: List<com.captainslog.database.entities.BoatEntity> = emptyList(),
+    crewMembers: List<CrewMemberEntity> = emptyList(),
     onNavigateBack: () -> Unit,
     onStopTrip: () -> Unit = {},
     onUpdateManualData: (TripEntity) -> Unit = {},
+    onShareWithCrew: () -> Unit = {},
+    onJoinTrip: () -> Unit = {},
     // Optional sensor data parameters
     sensorConnectionState: BluetoothConnectionState = BluetoothConnectionState.DISCONNECTED,
     sensorData: List<SensorData> = emptyList(),
@@ -53,13 +57,22 @@ fun TripDetailScreen(
                     onUpdateManualData(updatedTrip)
                 }
             )
-            
-            // ALWAYS show stop button at the top for visibility
+
+            // Crew card
+            CrewCard(
+                crewMembers = crewMembers,
+                isActiveTrip = trip.endTime == null,
+                isCaptain = trip.role == "captain",
+                onShareWithCrew = onShareWithCrew,
+                onJoinTrip = onJoinTrip
+            )
+
+            // Trip status card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = if (trip.endTime == null) {
-                        MaterialTheme.colorScheme.errorContainer
+                        MaterialTheme.colorScheme.primaryContainer
                     } else {
                         MaterialTheme.colorScheme.surfaceVariant
                     }
@@ -71,55 +84,68 @@ fun TripDetailScreen(
                         .padding(20.dp)
                 ) {
                     if (trip.endTime == null) {
-                        // ACTIVE TRIP - Prominent stop button
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Trip in Progress",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Badge(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ) {
+                                Text("Active", color = MaterialTheme.colorScheme.onPrimary)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
                         Text(
-                            text = "🔴 TRIP IN PROGRESS",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.error
+                            text = "GPS tracking is active",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                         )
-                        
-                        Text(
-                            text = "GPS tracking is active - tap to stop",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        
-                        Spacer(modifier = Modifier.height(20.dp))
-                        
-                        // HUGE STOP BUTTON
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
                         Button(
                             onClick = {
-                                android.util.Log.d("TripDetailScreen", "🛑 STOP TRIP button clicked for active trip ${trip.id}")
+                                android.util.Log.d("TripDetailScreen", "STOP TRIP button clicked for active trip ${trip.id}")
                                 onStopTrip()
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(80.dp),
+                                .height(48.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.error,
-                                contentColor = androidx.compose.ui.graphics.Color.White
+                                contentColor = MaterialTheme.colorScheme.onError
                             )
                         ) {
                             Text(
-                                "🛑 STOP TRIP",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold
+                                "Stop Trip",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
-                        
+
                     } else {
-                        // COMPLETED TRIP
                         Text(
-                            text = "✅ TRIP COMPLETED",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
+                            text = "Trip Completed",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
                         Text(
-                            text = "Ended: ${formatDateTime(trip.endTime!!)}",
-                            style = MaterialTheme.typography.bodyLarge
+                            text = "Ended ${formatDateTime(trip.endTime!!)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -156,6 +182,92 @@ fun TripDetailScreen(
             // Sync status
             SyncStatusCard(trip = trip)
         }
+}
+
+@Composable
+fun CrewCard(
+    crewMembers: List<CrewMemberEntity>,
+    isActiveTrip: Boolean,
+    isCaptain: Boolean,
+    onShareWithCrew: () -> Unit,
+    onJoinTrip: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Crew",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (crewMembers.isEmpty()) {
+                Text(
+                    text = "No crew members yet",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                crewMembers.forEach { crewMember ->
+                    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                        Text(
+                            text = crewMember.displayName,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Role: ${crewMember.role}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Joined: ${formatDateTime(crewMember.joinedAt)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    if (crewMember != crewMembers.last()) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Show "Share with Crew" button only for active trips and if user is captain
+            if (isActiveTrip && isCaptain) {
+                Button(
+                    onClick = onShareWithCrew,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Share with Crew")
+                }
+            }
+
+            // Show "Join a Trip" button only for active trips where user is crew (not captain)
+            if (isActiveTrip && !isCaptain) {
+                OutlinedButton(
+                    onClick = onJoinTrip,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Scan Updated Crew QR")
+                }
+            }
+        }
+    }
 }
 
 @Composable

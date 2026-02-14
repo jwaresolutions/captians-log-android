@@ -29,6 +29,7 @@ class SecurePreferences(context: Context) {
         private const val KEY_SETUP_COMPLETE = "setup_complete"
         private const val KEY_SAVE_USERNAME = "save_username"
         private const val KEY_DEVICE_ID = "device_id"
+        private const val KEY_DISPLAY_NAME = "display_name"
     }
 
     var jwtToken: String?
@@ -67,6 +68,10 @@ class SecurePreferences(context: Context) {
         get() = sharedPreferences.getString(KEY_DEVICE_ID, null)
                 ?: UUID.randomUUID().toString().also { deviceId = it }
         set(value) = sharedPreferences.edit().putString(KEY_DEVICE_ID, value).apply()
+
+    var displayName: String?
+        get() = sharedPreferences.getString(KEY_DISPLAY_NAME, null)
+        set(value) = sharedPreferences.edit().putString(KEY_DISPLAY_NAME, value).apply()
 
     fun clear() {
         sharedPreferences.edit().clear().apply()

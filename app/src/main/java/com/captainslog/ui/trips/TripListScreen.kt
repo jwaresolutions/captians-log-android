@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,6 +37,7 @@ fun TripListScreen(
     onRefreshState: () -> Unit = {},
     onNuclearStop: () -> Unit = {},
     onShareTrip: (String) -> Unit = {},
+    onJoinTrip: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Check if there's an active trip (trip with no end time)
@@ -53,6 +55,7 @@ fun TripListScreen(
             if (trips.isEmpty()) {
                 EmptyTripList(
                     onStartNewTrip = { showStartDialog = true },
+                    onJoinTrip = onJoinTrip,
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
@@ -108,21 +111,37 @@ fun TripListScreen(
             }
         }
         
-        // Floating Action Button
-        FloatingActionButton(
-            onClick = { showStartDialog = true },
-            containerColor = if (hasActiveTrip) 
-                MaterialTheme.colorScheme.tertiary 
-            else 
-                MaterialTheme.colorScheme.primary,
+        // FAB column
+        Column(
+            horizontalAlignment = Alignment.End,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(
-                imageVector = if (hasActiveTrip) Icons.Default.Refresh else Icons.Default.Add,
-                contentDescription = if (hasActiveTrip) "View Active Trip" else "Start New Trip"
-            )
+            // Join Trip FAB
+            SmallFloatingActionButton(
+                onClick = onJoinTrip,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            ) {
+                Icon(
+                    imageVector = Icons.Default.QrCodeScanner,
+                    contentDescription = "Join a Trip"
+                )
+            }
+            // Start Trip FAB
+            FloatingActionButton(
+                onClick = { showStartDialog = true },
+                containerColor = if (hasActiveTrip)
+                    MaterialTheme.colorScheme.tertiary
+                else
+                    MaterialTheme.colorScheme.primary
+            ) {
+                Icon(
+                    imageVector = if (hasActiveTrip) Icons.Default.Refresh else Icons.Default.Add,
+                    contentDescription = if (hasActiveTrip) "View Active Trip" else "Start New Trip"
+                )
+            }
         }
     }
     
@@ -285,9 +304,9 @@ fun ActiveTripCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
+            containerColor = MaterialTheme.colorScheme.primaryContainer
         )
     ) {
         Column(
@@ -301,40 +320,41 @@ fun ActiveTripCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "🔴 TRIP IN PROGRESS",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.error
+                    text = "Trip in Progress",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-                
+
                 Badge(
-                    containerColor = MaterialTheme.colorScheme.error
+                    containerColor = MaterialTheme.colorScheme.primary
                 ) {
-                    Text("ACTIVE", fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color.White)
+                    Text("Active", color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Text(
-                text = "Started: ${formatDateTime(trip.startTime)}",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onErrorContainer
-            )
-            
-            Text(
-                text = "Water: ${trip.waterType.replaceFirstChar { it.uppercase() }} • Role: ${trip.role.replaceFirstChar { it.uppercase() }}",
+                text = "Started ${formatDateTime(trip.startTime)}",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
+
+            Spacer(modifier = Modifier.height(4.dp))
+
             Text(
-                text = "📱 Tap to view details and stop trip",
+                text = "${trip.waterType.replaceFirstChar { it.uppercase() }} · ${trip.role.replaceFirstChar { it.uppercase() }}",
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onErrorContainer
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Tap to view details",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
             )
         }
     }
@@ -360,7 +380,7 @@ fun StartNewTripCard(
                 .padding(20.dp)
         ) {
             Text(
-                text = "⚓ Ready to Start Tracking",
+                text = "Ready to Start Tracking",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -412,6 +432,7 @@ fun StartNewTripCard(
 @Composable
 fun EmptyTripList(
     onStartNewTrip: () -> Unit,
+    onJoinTrip: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -435,6 +456,12 @@ fun EmptyTripList(
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
             Text("Start New Trip")
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedButton(onClick = onJoinTrip) {
+            Icon(Icons.Default.QrCodeScanner, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Join a Trip")
         }
     }
 }

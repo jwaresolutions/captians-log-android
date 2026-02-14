@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.captainslog.database.converters.DateConverter
 import com.captainslog.database.dao.BoatDao
+import com.captainslog.database.dao.CrewMemberDao
 import com.captainslog.database.dao.GpsPointDao
 import com.captainslog.database.dao.MaintenanceTemplateDao
 import com.captainslog.database.dao.MaintenanceEventDao
@@ -18,6 +19,7 @@ import com.captainslog.database.dao.TodoListDao
 import com.captainslog.database.dao.TripDao
 import com.captainslog.database.dao.OfflineChangeDao
 import com.captainslog.database.entities.BoatEntity
+import com.captainslog.database.entities.CrewMemberEntity
 import com.captainslog.database.entities.GpsPointEntity
 import com.captainslog.database.entities.MaintenanceTemplateEntity
 import com.captainslog.database.entities.MaintenanceEventEntity
@@ -29,6 +31,7 @@ import com.captainslog.database.entities.TodoListEntity
 import com.captainslog.database.entities.TripEntity
 import com.captainslog.database.entities.OfflineChangeEntity
 import com.captainslog.database.migrations.MIGRATION_9_10
+import com.captainslog.database.migrations.MIGRATION_10_11
 
 @Database(
     entities = [
@@ -42,9 +45,10 @@ import com.captainslog.database.migrations.MIGRATION_9_10
         MaintenanceTemplateEntity::class,
         MaintenanceEventEntity::class,
         MarkedLocationEntity::class,
-        OfflineChangeEntity::class
+        OfflineChangeEntity::class,
+        CrewMemberEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class)
@@ -60,5 +64,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun maintenanceEventDao(): MaintenanceEventDao
     abstract fun markedLocationDao(): MarkedLocationDao
     abstract fun offlineChangeDao(): OfflineChangeDao
+    abstract fun crewMemberDao(): CrewMemberDao
 
 }

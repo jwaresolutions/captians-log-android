@@ -28,5 +28,7 @@ data class TripEntity(
     val captainId: String? = null,       // User ID of captain (null = local user is captain)
     val originSource: String? = null,    // Device UUID for P2P shares
     val originTimestamp: Long? = null,   // Unix timestamp when shared/imported
-    val isReadOnly: Boolean = false      // True for crew trips after disconnect
+    val isReadOnly: Boolean = false,     // True for crew trips after disconnect
+    val captainTripId: String? = null,   // On crew devices, links to captain's original trip ID for re-scan updates
+    val captainName: String? = null      // Display name of the captain
 )
