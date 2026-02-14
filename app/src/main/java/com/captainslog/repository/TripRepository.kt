@@ -6,7 +6,9 @@ import com.captainslog.connection.ConnectionManager
 import com.captainslog.database.AppDatabase
 import com.captainslog.database.entities.GpsPointEntity
 import com.captainslog.database.entities.TripEntity
-import com.captainslog.sync.ImmediateSyncService
+import com.captainslog.sync.DataType
+import com.captainslog.sync.SyncOrchestrator
+import dagger.Lazy
 import kotlinx.coroutines.flow.Flow
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -19,10 +21,11 @@ import java.util.TimeZone
  */
 class TripRepository(
     private val database: AppDatabase,
-    private val context: Context
+    private val context: Context,
+    private val connectionManager: ConnectionManager,
+    private val syncOrchestratorLazy: Lazy<SyncOrchestrator>
 ) {
-    private val connectionManager = ConnectionManager.getInstance(context)
-    private val immediateSyncService = ImmediateSyncService.getInstance(context, database)
+    private val syncOrchestrator: SyncOrchestrator get() = syncOrchestratorLazy.get()
 
     /**
      * Get all trips as a Flow for reactive updates
@@ -58,7 +61,7 @@ class TripRepository(
     suspend fun insertTrip(trip: TripEntity) {
         database.tripDao().insertTrip(trip)
         // Sync immediately if connected, queue if offline
-        immediateSyncService.syncTrip(trip.id)
+        syncOrchestrator.syncEntity(DataType.TRIPS,trip.id)
     }
 
     /**
@@ -67,7 +70,7 @@ class TripRepository(
     suspend fun updateTrip(trip: TripEntity) {
         database.tripDao().updateTrip(trip)
         // Sync immediately if connected, queue if offline
-        immediateSyncService.syncTrip(trip.id)
+        syncOrchestrator.syncEntity(DataType.TRIPS,trip.id)
     }
 
     /**
@@ -146,7 +149,7 @@ class TripRepository(
         return try {
             val unsyncedTrips = getUnsyncedTrips()
             for (trip in unsyncedTrips) {
-                immediateSyncService.syncTrip(trip.id)
+                syncOrchestrator.syncEntity(DataType.TRIPS,trip.id)
             }
             Result.success(Unit)
         } catch (e: Exception) {

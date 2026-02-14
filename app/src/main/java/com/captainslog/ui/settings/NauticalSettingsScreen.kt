@@ -19,18 +19,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.captainslog.nautical.NauticalProviders
 import com.captainslog.nautical.NauticalSettingsManager
 import com.captainslog.nautical.model.NauticalProviderMeta
 import com.captainslog.nautical.model.ProviderTier
+import com.captainslog.viewmodel.MainNavigationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NauticalSettingsScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: MainNavigationViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val settingsManager = remember { NauticalSettingsManager.getInstance(context) }
+    val settingsManager = viewModel.nauticalSettingsManager
     val settings by settingsManager.settings.collectAsState()
 
     Column(

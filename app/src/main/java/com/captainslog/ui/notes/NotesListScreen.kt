@@ -13,7 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.captainslog.database.entities.NoteEntity
 import com.captainslog.viewmodel.NoteViewModel
 import kotlinx.coroutines.launch
@@ -27,7 +27,7 @@ import java.util.*
 @Composable
 fun NotesListScreen(
     modifier: Modifier = Modifier,
-    viewModel: NoteViewModel = viewModel(),
+    viewModel: NoteViewModel = hiltViewModel(),
     onNoteClick: (String) -> Unit = {},
     onCreateNote: () -> Unit = {}
 ) {

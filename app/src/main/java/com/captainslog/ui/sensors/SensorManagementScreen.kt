@@ -18,11 +18,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.captainslog.bluetooth.BluetoothConnectionState
 import com.captainslog.bluetooth.BluetoothDevice
-import com.captainslog.connection.ConnectionManager
-import com.captainslog.repository.SensorRepository
 import com.captainslog.viewmodel.SensorViewModel
 import com.captainslog.viewmodel.SensorUiState
 
@@ -32,17 +30,9 @@ import com.captainslog.viewmodel.SensorUiState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SensorManagementScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: SensorViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val connectionManager = remember { ConnectionManager.getInstance(context) }
-    val sensorRepository = remember { 
-        connectionManager.initialize()
-        SensorRepository(connectionManager)
-    }
-    val viewModel: SensorViewModel = viewModel {
-        SensorViewModel(context.applicationContext as android.app.Application, sensorRepository)
-    }
     
     val uiState by viewModel.uiState.collectAsState()
     val connectionState by viewModel.connectionState.collectAsState()

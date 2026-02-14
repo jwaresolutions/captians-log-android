@@ -30,7 +30,10 @@ class BoatRepositoryTest {
     private lateinit var apiService: ApiService
     private lateinit var connectionManager: ConnectionManager
     private lateinit var context: Context
+    private lateinit var syncOrchestratorLazy: dagger.Lazy<com.captainslog.sync.SyncOrchestrator>
     private lateinit var repository: BoatRepository
+
+    private lateinit var syncOrchestrator: com.captainslog.sync.SyncOrchestrator
 
     @BeforeEach
     fun setup() {
@@ -39,11 +42,16 @@ class BoatRepositoryTest {
         apiService = mockk()
         connectionManager = mockk()
         context = mockk()
-        
+
+        // Mock SyncOrchestrator and Lazy wrapper
+        syncOrchestrator = mockk<com.captainslog.sync.SyncOrchestrator>(relaxed = true)
+        syncOrchestratorLazy = mockk()
+        every { syncOrchestratorLazy.get() } returns syncOrchestrator
+
         every { database.boatDao() } returns boatDao
         coEvery { connectionManager.getApiService() } returns apiService
-        
-        repository = BoatRepository(database, connectionManager, context)
+
+        repository = BoatRepository(database, connectionManager, context, syncOrchestratorLazy)
     }
 
     @AfterEach
@@ -113,35 +121,26 @@ class BoatRepositoryTest {
     @Test
     fun `createBoat should insert boat locally and sync to API`() = runBlocking {
         val boatName = "New Boat"
-        val apiBoat = BoatResponse(
-            id = "api-boat-1",
-            name = boatName,
-            enabled = true,
-            isActive = true,
-            metadata = null,
-            createdAt = "2024-01-01T00:00:00Z",
-            updatedAt = "2024-01-01T00:00:00Z"
-        )
-        
+
+        coEvery { boatDao.getAllBoatsSync() } returns emptyList()
         coEvery { boatDao.insertBoat(any()) } returns Unit
-        coEvery { apiService.createBoat(any()) } returns Response.success(ApiDataResponse(data = apiBoat))
-        
+
         val result = repository.createBoat(boatName)
-        
+
         assertTrue(result.isSuccess)
         coVerify { boatDao.insertBoat(any()) }
-        coVerify { apiService.createBoat(CreateBoatRequest(name = boatName)) }
+        coVerify { syncOrchestrator.syncEntity(com.captainslog.sync.DataType.BOATS, any()) }
     }
 
     @Test
     fun `createBoat should succeed locally even if API fails`() = runBlocking {
         val boatName = "New Boat"
-        
+
+        coEvery { boatDao.getAllBoatsSync() } returns emptyList()
         coEvery { boatDao.insertBoat(any()) } returns Unit
-        coEvery { apiService.createBoat(any()) } throws Exception("Network error")
-        
+
         val result = repository.createBoat(boatName)
-        
+
         assertTrue(result.isSuccess)
         coVerify { boatDao.insertBoat(any()) }
     }
@@ -155,17 +154,15 @@ class BoatRepositoryTest {
             enabled = true,
             isActive = false
         )
-        
+
         coEvery { boatDao.getBoatById(boatId) } returns boat
         coEvery { boatDao.updateBoat(any()) } returns Unit
-        coEvery { apiService.updateBoatStatus(boatId, any()) } returns Response.success(mockk())
-        coEvery { boatDao.markAsSynced(boatId) } returns Unit
-        
+
         val result = repository.updateBoatStatus(boatId, false)
-        
+
         assertTrue(result.isSuccess)
         coVerify { boatDao.updateBoat(any()) }
-        coVerify { apiService.updateBoatStatus(boatId, mapOf("enabled" to false)) }
+        coVerify { syncOrchestrator.syncEntity(com.captainslog.sync.DataType.BOATS, boatId) }
     }
 
     @Test
@@ -177,20 +174,18 @@ class BoatRepositoryTest {
             enabled = true,
             isActive = false
         )
-        
+
         coEvery { boatDao.clearActiveBoat() } returns Unit
         coEvery { boatDao.setActiveBoat(boatId) } returns Unit
         coEvery { boatDao.getBoatById(boatId) } returns boat
         coEvery { boatDao.updateBoat(any()) } returns Unit
-        coEvery { apiService.setActiveBoat(boatId) } returns Response.success(mockk())
-        coEvery { boatDao.markAsSynced(boatId) } returns Unit
-        
+
         val result = repository.setActiveBoat(boatId)
-        
+
         assertTrue(result.isSuccess)
         coVerify { boatDao.clearActiveBoat() }
         coVerify { boatDao.setActiveBoat(boatId) }
-        coVerify { apiService.setActiveBoat(boatId) }
+        coVerify { syncOrchestrator.syncEntity(com.captainslog.sync.DataType.BOATS, boatId) }
     }
 
     @Test
@@ -215,19 +210,20 @@ class BoatRepositoryTest {
                 updatedAt = "2024-01-01T00:00:00Z"
             )
         )
-        
+
         val wrappedResponse = ApiListResponse(
             data = apiBoats,
             count = apiBoats.size,
             timestamp = "2024-01-01T00:00:00Z"
         )
         coEvery { apiService.getBoats() } returns Response.success(wrappedResponse)
-        coEvery { boatDao.insertBoats(any()) } returns Unit
-        
+        coEvery { boatDao.getAllBoatsSync() } returns emptyList()
+        coEvery { boatDao.insertBoat(any()) } returns Unit
+
         val result = repository.syncBoatsFromApi()
-        
+
         assertTrue(result.isSuccess)
         coVerify { apiService.getBoats() }
-        coVerify { boatDao.insertBoats(any()) }
+        coVerify(exactly = 2) { boatDao.insertBoat(any()) }
     }
 }

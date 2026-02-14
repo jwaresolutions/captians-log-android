@@ -1,29 +1,34 @@
 package com.captainslog.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.captainslog.connection.ConnectionManager
 import com.captainslog.data.LicenseProgress
+import com.captainslog.database.AppDatabase
 import com.captainslog.license.LicenseCalculator
 import com.captainslog.mode.AppModeManager
 import com.captainslog.network.models.LicenseProgressResponse
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.inject.Inject
 
 /**
  * ViewModel for the License Progress screen.
  * Manages captain's license progress data and UI state.
  */
-class LicenseProgressViewModel(
-    private val context: android.content.Context
+@HiltViewModel
+class LicenseProgressViewModel @Inject constructor(
+    private val connectionManager: ConnectionManager,
+    private val appModeManager: AppModeManager,
+    database: AppDatabase
 ) : ViewModel() {
 
-    private val connectionManager = com.captainslog.connection.ConnectionManager.getInstance(context)
-    private val appModeManager = AppModeManager.getInstance(context)
-    private val database = com.captainslog.database.AppDatabase.getInstance(context)
     private val licenseCalculator = LicenseCalculator(database.tripDao())
 
     data class UiState(
@@ -92,7 +97,7 @@ class LicenseProgressViewModel(
                     }
                 }
             } catch (e: Exception) {
-                android.util.Log.e("LicenseProgressVM", "Error loading license progress", e)
+                Log.e("LicenseProgressVM", "Error loading license progress", e)
 
                 val errorMessage = when {
                     e.message?.contains("timeout", ignoreCase = true) == true ->
@@ -146,7 +151,7 @@ class LicenseProgressViewModel(
      */
     private fun formatEstimatedDate(isoDate: String?): String? {
         if (isoDate == null) return null
-        
+
         return try {
             val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
             val outputFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
@@ -160,7 +165,7 @@ class LicenseProgressViewModel(
                 val date = inputFormat.parse(isoDate)
                 date?.let { outputFormat.format(it) }
             } catch (e2: Exception) {
-                android.util.Log.w("LicenseProgressVM", "Failed to parse date: $isoDate", e2)
+                Log.w("LicenseProgressVM", "Failed to parse date: $isoDate", e2)
                 isoDate // Return original if parsing fails
             }
         }

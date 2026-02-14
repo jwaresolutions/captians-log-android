@@ -9,7 +9,8 @@ import com.captainslog.database.entities.MaintenanceTemplateEntity
 import com.captainslog.database.entities.MaintenanceEventEntity
 import com.captainslog.network.models.*
 import com.captainslog.sync.OfflineChangeService
-import com.captainslog.sync.SyncManager
+import com.captainslog.sync.SyncOrchestrator
+import dagger.Lazy
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
@@ -23,8 +24,10 @@ class MaintenanceTemplateRepository(
     private val templateDao: MaintenanceTemplateDao,
     private val eventDao: MaintenanceEventDao,
     private val offlineChangeDao: OfflineChangeDao,
-    private val syncManager: SyncManager
+    private val syncOrchestratorLazy: Lazy<SyncOrchestrator>
 ) {
+    private val syncOrchestrator: SyncOrchestrator get() = syncOrchestratorLazy.get()
+
     companion object {
         private const val TAG = "MaintenanceTemplateRepository"
         private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
@@ -126,7 +129,7 @@ class MaintenanceTemplateRepository(
             offlineChangeService.queueTemplateCreation(request)
             
             // Trigger sync when connectivity returns
-            syncManager.triggerImmediateTemplateSync()
+            syncOrchestrator.triggerImmediateTemplateSync()
             
             Log.d(TAG, "Created template offline: ${templateEntity.title}")
             Result.success(templateEntity)
@@ -196,7 +199,7 @@ class MaintenanceTemplateRepository(
 
                 // Queue for offline sync
                 offlineChangeService.queueTemplateUpdate(templateId, request)
-                syncManager.triggerImmediateTemplateSync()
+                syncOrchestrator.triggerImmediateTemplateSync()
                 
                 Log.d(TAG, "Updated template offline: $templateId")
                 Result.success(updatedTemplate)
@@ -248,7 +251,7 @@ class MaintenanceTemplateRepository(
 
             // Queue for offline sync
             offlineChangeService.queueScheduleChange(templateId, newRecurrence)
-            syncManager.triggerImmediateTemplateSync()
+            syncOrchestrator.triggerImmediateTemplateSync()
             
             Log.d(TAG, "Queued schedule change for offline sync: $templateId")
             Result.success(Unit)
@@ -311,7 +314,7 @@ class MaintenanceTemplateRepository(
 
             // Queue for offline sync
             offlineChangeService.queueInformationChange(templateId, request)
-            syncManager.triggerImmediateTemplateSync()
+            syncOrchestrator.triggerImmediateTemplateSync()
             
             Log.d(TAG, "Queued information change for offline sync: $templateId")
             Result.success(Unit)
@@ -355,7 +358,7 @@ class MaintenanceTemplateRepository(
             }
 
             offlineChangeService.queueTemplateDeletion(templateId)
-            syncManager.triggerImmediateTemplateSync()
+            syncOrchestrator.triggerImmediateTemplateSync()
             
             Log.d(TAG, "Queued template deletion for offline sync: $templateId")
             Result.success(Unit)

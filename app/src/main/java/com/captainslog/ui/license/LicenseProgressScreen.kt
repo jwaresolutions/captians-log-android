@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.captainslog.viewmodel.LicenseProgressViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -24,13 +24,9 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LicenseProgressScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: LicenseProgressViewModel = hiltViewModel()
 ) {
-    // Create ViewModel with Context dependency
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val viewModel: LicenseProgressViewModel = remember { 
-        LicenseProgressViewModel(context) 
-    }
     val uiState by viewModel.uiState.collectAsState()
     
     LaunchedEffect(Unit) {

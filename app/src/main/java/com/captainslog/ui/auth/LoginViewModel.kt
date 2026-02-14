@@ -1,18 +1,19 @@
 package com.captainslog.ui.auth
 
-import android.app.Application
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.captainslog.BuildConfig
 import com.captainslog.connection.ConnectionManager
 import com.captainslog.network.models.LoginRequest
 import com.captainslog.security.SecurePreferences
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class LoginUiState(
     val username: String = "",
@@ -27,9 +28,11 @@ data class LoginUiState(
         get() = username.isNotBlank() && password.isNotBlank() && serverUrl.isNotBlank()
 }
 
-class LoginViewModel(application: Application) : AndroidViewModel(application) {
-    private val securePreferences = SecurePreferences(application)
-    private val connectionManager = ConnectionManager.getInstance(application)
+@HiltViewModel
+class LoginViewModel @Inject constructor(
+    private val securePreferences: SecurePreferences,
+    private val connectionManager: ConnectionManager
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         LoginUiState(
@@ -95,16 +98,16 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
                 if (response.isSuccessful && response.body() != null) {
                     val loginResponse = response.body()!!
-                    
+
                     // Store JWT token and username
                     securePreferences.jwtToken = loginResponse.token
                     securePreferences.username = loginResponse.user.username
-                    
+
                     // Reinitialize connection manager with new token
                     connectionManager.initialize()
-                    
+
                     Log.d("LoginViewModel", "Login successful for user: ${loginResponse.user.username}")
-                    
+
                     _uiState.update { it.copy(isLoading = false, error = null) }
                     onSuccess()
                 } else {
@@ -115,20 +118,20 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                         500 -> "Server error. Please try again later"
                         else -> "Login failed: ${response.code()}"
                     }
-                    
+
                     Log.e("LoginViewModel", "Login failed: ${response.code()} - ${response.message()}")
                     _uiState.update { it.copy(isLoading = false, error = errorMessage) }
                 }
             } catch (e: Exception) {
                 Log.e("LoginViewModel", "Login error", e)
                 val errorMessage = when {
-                    e.message?.contains("Unable to resolve host") == true -> 
+                    e.message?.contains("Unable to resolve host") == true ->
                         "Cannot connect to server. Check your internet connection"
-                    e.message?.contains("timeout") == true -> 
+                    e.message?.contains("timeout") == true ->
                         "Connection timeout. Please try again"
-                    e.message?.contains("Certificate pinning") == true -> 
+                    e.message?.contains("Certificate pinning") == true ->
                         "Server certificate verification failed"
-                    else -> 
+                    else ->
                         "Login failed: ${e.message ?: "Unknown error"}"
                 }
                 _uiState.update { it.copy(isLoading = false, error = errorMessage) }
@@ -146,27 +149,27 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                 if (storedToken != null) {
                     // Reinitialize connection manager with stored token
                     connectionManager.initialize()
-                    
+
                     Log.d("LoginViewModel", "Offline login successful with stored token")
-                    
+
                     _uiState.update { it.copy(isLoading = false, error = null) }
                     onSuccess()
                 } else {
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
-                            isLoading = false, 
+                            isLoading = false,
                             error = "No stored session found. Please sign in online.",
                             hasStoredToken = false
-                        ) 
+                        )
                     }
                 }
             } catch (e: Exception) {
                 Log.e("LoginViewModel", "Offline login error", e)
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
-                        isLoading = false, 
+                        isLoading = false,
                         error = "Offline login failed: ${e.message ?: "Unknown error"}"
-                    ) 
+                    )
                 }
             }
         }

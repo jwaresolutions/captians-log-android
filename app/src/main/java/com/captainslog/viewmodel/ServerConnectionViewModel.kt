@@ -1,18 +1,19 @@
 package com.captainslog.viewmodel
 
-import android.app.Application
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.captainslog.connection.ConnectionManager
 import com.captainslog.mode.AppModeManager
 import com.captainslog.network.models.LoginRequest
 import com.captainslog.security.SecurePreferences
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 sealed class ServerConnectionState {
     data object Idle : ServerConnectionState()
@@ -37,10 +38,12 @@ data class ServerConnectionUiState(
         get() = connectionState is ServerConnectionState.Loading
 }
 
-class ServerConnectionViewModel(application: Application) : AndroidViewModel(application) {
-    private val securePreferences = SecurePreferences(application)
-    private val connectionManager = ConnectionManager.getInstance(application)
-    private val appModeManager = AppModeManager.getInstance(application)
+@HiltViewModel
+class ServerConnectionViewModel @Inject constructor(
+    private val securePreferences: SecurePreferences,
+    private val connectionManager: ConnectionManager,
+    private val appModeManager: AppModeManager
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ServerConnectionUiState())
     val uiState: StateFlow<ServerConnectionUiState> = _uiState.asStateFlow()

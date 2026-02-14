@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.captainslog.database.entities.BoatEntity
@@ -31,8 +31,8 @@ fun TodoDetailScreen(
     modifier: Modifier = Modifier,
     listId: String,
     onNavigateBack: () -> Unit,
-    todoViewModel: TodoViewModel = viewModel(),
-    boatViewModel: BoatViewModel = viewModel()
+    todoViewModel: TodoViewModel = hiltViewModel(),
+    boatViewModel: BoatViewModel = hiltViewModel()
 ) {
     val todoUiState by todoViewModel.uiState.collectAsStateWithLifecycle()
     val todoItems by todoViewModel.selectedListItems.collectAsStateWithLifecycle(initialValue = emptyList())

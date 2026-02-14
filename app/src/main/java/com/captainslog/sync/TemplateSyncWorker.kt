@@ -11,13 +11,22 @@ import com.captainslog.network.models.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.*
+import androidx.hilt.work.HiltWorker
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 
 /**
  * WorkManager worker for syncing offline template changes
  */
-class TemplateSyncWorker(
-    context: Context,
-    params: WorkerParameters
+@HiltWorker
+class TemplateSyncWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val database: AppDatabase,
+    private val offlineChangeService: OfflineChangeService,
+    private val connectionManager: ConnectionManager,
+    private val syncNotificationHelper: SyncNotificationHelper,
+    private val conflictLogger: ConflictLogger
 ) : CoroutineWorker(context, params) {
 
     companion object {
@@ -25,12 +34,7 @@ class TemplateSyncWorker(
         const val WORK_NAME = "template_sync_work"
     }
 
-    private val database = AppDatabase.getDatabase(applicationContext)
     private val offlineChangeDao = database.offlineChangeDao()
-    private val offlineChangeService = OfflineChangeService(offlineChangeDao)
-    private val connectionManager = ConnectionManager.getInstance(applicationContext)
-    private val syncNotificationHelper = SyncNotificationHelper(applicationContext)
-    private val conflictLogger = ConflictLogger(applicationContext)
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {

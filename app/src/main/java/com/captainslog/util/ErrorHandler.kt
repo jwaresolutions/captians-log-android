@@ -19,6 +19,20 @@ object ErrorHandler {
     private const val TAG = "ErrorHandler"
 
     /**
+     * Get user-friendly error message from exception (without context/toast)
+     */
+    fun getErrorMessage(error: Throwable): String {
+        return when (error) {
+            is UnknownHostException -> "Unable to reach server. Check your connection"
+            is ConnectException -> "Unable to reach server. The server may be unavailable"
+            is SocketTimeoutException -> "Connection timed out. Please try again"
+            is SSLException -> "Secure connection failed. Please check your network"
+            is IOException -> "Network error occurred. Please try again"
+            else -> error.message ?: "An unexpected error occurred"
+        }
+    }
+
+    /**
      * Handle API errors and show appropriate user messages
      */
     fun handleApiError(
@@ -27,14 +41,7 @@ object ErrorHandler {
         userMessage: String? = null,
         showToast: Boolean = true
     ): String {
-        val message = when (error) {
-            is UnknownHostException -> "Unable to reach server. Check your connection"
-            is ConnectException -> "Unable to reach server. The server may be unavailable"
-            is SocketTimeoutException -> "Connection timed out. Please try again"
-            is SSLException -> "Secure connection failed. Please check your network"
-            is IOException -> "Network error occurred. Please try again"
-            else -> userMessage ?: "An unexpected error occurred"
-        }
+        val message = userMessage ?: getErrorMessage(error)
 
         Log.e(TAG, "API Error: ${error.message}", error)
 

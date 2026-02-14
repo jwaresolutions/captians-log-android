@@ -1,15 +1,16 @@
 package com.captainslog.ui.setup
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.captainslog.connection.ConnectionManager
 import com.captainslog.security.SecurePreferences
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 enum class SetupStep {
     SERVER_CONFIG,
@@ -29,9 +30,11 @@ data class SetupUiState(
     val testResult: ConnectionTestResult? = null
 )
 
-class SetupViewModel(application: Application) : AndroidViewModel(application) {
-    private val securePreferences = SecurePreferences(application)
-    private val connectionManager = ConnectionManager.getInstance(application)
+@HiltViewModel
+class SetupViewModel @Inject constructor(
+    private val securePreferences: SecurePreferences,
+    private val connectionManager: ConnectionManager
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SetupUiState())
     val uiState: StateFlow<SetupUiState> = _uiState.asStateFlow()
@@ -70,7 +73,7 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
             val state = _uiState.value
             securePreferences.remoteUrl = state.serverUrl
             securePreferences.remoteCertPin = state.certPin
-            
+
             // Clear local server configuration (will be set in advanced settings later)
             securePreferences.localUrl = null
             securePreferences.localCertPin = null
@@ -95,9 +98,9 @@ class SetupViewModel(application: Application) : AndroidViewModel(application) {
                         isTesting = false,
                         testResult = ConnectionTestResult(
                             success = remoteSuccess,
-                            message = if (remoteSuccess) 
-                                "Server is reachable. You can now log in." 
-                            else 
+                            message = if (remoteSuccess)
+                                "Server is reachable. You can now log in."
+                            else
                                 "Could not connect to server. Check URL${if (com.captainslog.BuildConfig.REQUIRE_CERT_PINNING) " and certificate pin" else ""}."
                         )
                     )

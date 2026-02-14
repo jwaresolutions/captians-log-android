@@ -1,14 +1,16 @@
 package com.captainslog.mode
 
-import android.content.Context
 import com.captainslog.security.SecurePreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AppModeManager private constructor(context: Context) {
-    private val securePreferences = SecurePreferences(context)
-
+@Singleton
+class AppModeManager @Inject constructor(
+    private val securePreferences: SecurePreferences
+) {
     private val _currentMode = MutableStateFlow(calculateMode())
     val currentMode: StateFlow<AppMode> = _currentMode.asStateFlow()
 
@@ -23,10 +25,6 @@ class AppModeManager private constructor(context: Context) {
         return token != null && token.isNotEmpty()
     }
 
-    /**
-     * Recalculate and update the current mode based on configuration state.
-     * Should be called after changes to server configuration or authentication state.
-     */
     fun refresh() {
         _currentMode.value = calculateMode()
     }
@@ -36,19 +34,6 @@ class AppModeManager private constructor(context: Context) {
             AppMode.CONNECTED
         } else {
             AppMode.STANDALONE
-        }
-    }
-
-    companion object {
-        @Volatile
-        private var INSTANCE: AppModeManager? = null
-
-        fun getInstance(context: Context): AppModeManager {
-            return INSTANCE ?: synchronized(this) {
-                val instance = AppModeManager(context.applicationContext)
-                INSTANCE = instance
-                instance
-            }
         }
     }
 }

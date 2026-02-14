@@ -9,21 +9,23 @@ import com.captainslog.database.AppDatabase
 import com.captainslog.repository.PhotoRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.hilt.work.HiltWorker
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 
 /**
  * WorkManager worker for syncing photos to the backend API.
  * Only uploads photos when on WiFi connection and prefers local connection.
  * Handles 7-day retention cleanup after successful upload.
  */
-class PhotoSyncWorker(
-    context: Context,
-    params: WorkerParameters
+@HiltWorker
+class PhotoSyncWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val photoRepository: PhotoRepository,
+    private val connectionManager: ConnectionManager,
+    private val syncStatusManager: SyncStatusManager
 ) : CoroutineWorker(context, params) {
-
-    private val database = AppDatabase.getInstance(context)
-    private val photoRepository = PhotoRepository(database, context)
-    private val connectionManager = ConnectionManager.getInstance(context)
-    private val syncStatusManager = SyncStatusManager.getInstance(context)
 
     companion object {
         const val TAG = "PhotoSyncWorker"

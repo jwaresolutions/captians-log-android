@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.captainslog.database.entities.BoatEntity
 import com.captainslog.database.entities.TripEntity
 import com.captainslog.viewmodel.BoatViewModel
@@ -32,8 +32,8 @@ fun NoteEditorScreen(
     initialBoatId: String? = null,
     initialTripId: String? = null,
     onNavigateBack: () -> Unit,
-    noteViewModel: NoteViewModel = viewModel(),
-    boatViewModel: BoatViewModel = viewModel()
+    noteViewModel: NoteViewModel = hiltViewModel(),
+    boatViewModel: BoatViewModel = hiltViewModel()
 ) {
     var content by remember { mutableStateOf("") }
     var noteType by remember { mutableStateOf(initialNoteType) }

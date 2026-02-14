@@ -31,7 +31,8 @@ import kotlinx.coroutines.withContext
 fun ShareBoatScreen(
     boatId: String,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    database: AppDatabase
 ) {
     val context = LocalContext.current
     var boat by remember { mutableStateOf<BoatEntity?>(null) }
@@ -46,7 +47,6 @@ fun ShareBoatScreen(
             error = null
 
             // Load boat from database
-            val database = AppDatabase.getInstance(context)
             val loadedBoat = withContext(Dispatchers.IO) {
                 database.boatDao().getBoatById(boatId)
             }

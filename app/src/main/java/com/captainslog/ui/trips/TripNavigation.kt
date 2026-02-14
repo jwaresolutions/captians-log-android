@@ -1,8 +1,7 @@
 package com.captainslog.ui.trips
 
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.captainslog.viewmodel.TripTrackingViewModel
 import com.captainslog.viewmodel.BoatViewModel
 import androidx.compose.ui.platform.LocalContext
@@ -16,17 +15,17 @@ import com.captainslog.ui.components.BreadcrumbItem
 @Composable
 fun TripNavigation(
     modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier,
-    viewModel: TripTrackingViewModel = viewModel(),
-    boatViewModel: BoatViewModel = viewModel(),
+    viewModel: TripTrackingViewModel = hiltViewModel(),
+    boatViewModel: BoatViewModel = hiltViewModel(),
     onBreadcrumbChanged: (List<BreadcrumbItem>, (() -> Unit)?) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     
     // Observe ViewModel state
-    val isTracking by viewModel.isTracking.observeAsState(false)
-    val currentTrip by viewModel.currentTrip.observeAsState()
-    val errorMessage by viewModel.errorMessage.observeAsState()
+    val isTracking by viewModel.isTracking.collectAsState()
+    val currentTrip by viewModel.currentTrip.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
     val trips by viewModel.getAllTrips().collectAsState(initial = emptyList())
     
     // Observe boat data

@@ -19,34 +19,37 @@ class SetupViewModelTest {
     val instantTaskExecutorRule = InstantTaskExecutorRule()
 
     private val testDispatcher = StandardTestDispatcher()
-    private lateinit var application: Application
+    private lateinit var securePreferences: SecurePreferences
+    private lateinit var connectionManager: com.captainslog.connection.ConnectionManager
     private lateinit var viewModel: SetupViewModel
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        
-        // Mock application context
-        application = mockk(relaxed = true)
-        
-        // Mock SecurePreferences
-        mockkConstructor(SecurePreferences::class)
-        every { anyConstructed<SecurePreferences>().jwtToken } returns null
-        every { anyConstructed<SecurePreferences>().jwtToken = any() } just Runs
-        every { anyConstructed<SecurePreferences>().username } returns null
-        every { anyConstructed<SecurePreferences>().username = any() } just Runs
-        every { anyConstructed<SecurePreferences>().remoteUrl } returns null
-        every { anyConstructed<SecurePreferences>().remoteUrl = any() } just Runs
-        every { anyConstructed<SecurePreferences>().remoteCertPin } returns null
-        every { anyConstructed<SecurePreferences>().remoteCertPin = any() } just Runs
-        every { anyConstructed<SecurePreferences>().localUrl } returns null
-        every { anyConstructed<SecurePreferences>().localUrl = any() } just Runs
-        every { anyConstructed<SecurePreferences>().localCertPin } returns null
-        every { anyConstructed<SecurePreferences>().localCertPin = any() } just Runs
-        every { anyConstructed<SecurePreferences>().isSetupComplete } returns false
-        every { anyConstructed<SecurePreferences>().isSetupComplete = any() } just Runs
 
-        viewModel = SetupViewModel(application)
+        // Mock SecurePreferences
+        securePreferences = mockk(relaxed = true)
+        every { securePreferences.jwtToken } returns null
+        every { securePreferences.jwtToken = any() } just Runs
+        every { securePreferences.username } returns null
+        every { securePreferences.username = any() } just Runs
+        every { securePreferences.remoteUrl } returns null
+        every { securePreferences.remoteUrl = any() } just Runs
+        every { securePreferences.remoteCertPin } returns null
+        every { securePreferences.remoteCertPin = any() } just Runs
+        every { securePreferences.localUrl } returns null
+        every { securePreferences.localUrl = any() } just Runs
+        every { securePreferences.localCertPin } returns null
+        every { securePreferences.localCertPin = any() } just Runs
+        every { securePreferences.isSetupComplete } returns false
+        every { securePreferences.isSetupComplete = any() } just Runs
+
+        // Mock ConnectionManager
+        connectionManager = mockk(relaxed = true)
+        every { connectionManager.initialize() } just Runs
+        coEvery { connectionManager.testConnections() } returns Pair(false, true)
+
+        viewModel = SetupViewModel(securePreferences, connectionManager)
     }
 
     @After
@@ -113,7 +116,7 @@ class SetupViewModelTest {
     @Test
     fun `completeSetup should mark setup as complete in preferences`() {
         viewModel.completeSetup()
-        
-        verify { anyConstructed<SecurePreferences>().isSetupComplete = true }
+
+        verify { securePreferences.isSetupComplete = true }
     }
 }

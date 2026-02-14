@@ -10,58 +10,61 @@ import com.captainslog.bluetooth.BluetoothManager
 import com.captainslog.bluetooth.SensorData
 import com.captainslog.network.models.SensorTypeResponse
 import com.captainslog.repository.SensorRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * ViewModel for managing sensor integration, Bluetooth connections, and sensor data
  */
-class SensorViewModel(
+@HiltViewModel
+class SensorViewModel @Inject constructor(
     application: Application,
     private val sensorRepository: SensorRepository
 ) : AndroidViewModel(application) {
-    
+
     companion object {
         private const val TAG = "SensorViewModel"
     }
-    
+
     private val bluetoothManager = BluetoothManager(application)
-    
+
     // UI State
     private val _uiState = MutableStateFlow(SensorUiState())
     val uiState: StateFlow<SensorUiState> = _uiState.asStateFlow()
-    
+
     // Bluetooth state flows
     val connectionState = bluetoothManager.connectionState
     val discoveredDevices = bluetoothManager.discoveredDevices
     val pairedDevices = bluetoothManager.pairedDevices
     val sensorData = bluetoothManager.sensorData
-    
+
     // Sensor types from backend
     private val _sensorTypes = MutableStateFlow<List<SensorTypeResponse>>(emptyList())
     val sensorTypes: StateFlow<List<SensorTypeResponse>> = _sensorTypes.asStateFlow()
-    
+
     // Current trip ID for sensor data recording
     private val _currentTripId = MutableStateFlow<String?>(null)
     val currentTripId: StateFlow<String?> = _currentTripId.asStateFlow()
-    
+
     init {
         // Set up sensor data callback to relay to backend
         bluetoothManager.onSensorDataReceived = { sensorData ->
             relaySensorDataToBackend(sensorData)
         }
-        
+
         // Load sensor types on initialization
         loadSensorTypes()
     }
-    
+
     /**
      * Check if Bluetooth is supported and enabled
      */
     fun isBluetoothSupported(): Boolean = bluetoothManager.isBluetoothSupported()
     fun isBluetoothEnabled(): Boolean = bluetoothManager.isBluetoothEnabled()
     fun hasRequiredPermissions(): Boolean = bluetoothManager.hasRequiredPermissions()
-    
+
     /**
      * Start device discovery
      */
@@ -69,7 +72,7 @@ class SensorViewModel(
         _uiState.value = _uiState.value.copy(isDiscovering = true)
         bluetoothManager.startDiscovery()
     }
-    
+
     /**
      * Stop device discovery
      */
@@ -77,7 +80,7 @@ class SensorViewModel(
         _uiState.value = _uiState.value.copy(isDiscovering = false)
         bluetoothManager.stopDiscovery()
     }
-    
+
     /**
      * Connect to a Bluetooth device
      */
@@ -88,9 +91,9 @@ class SensorViewModel(
                     isConnecting = true,
                     connectionError = null
                 )
-                
+
                 bluetoothManager.connectToDevice(device)
-                
+
                 // Wait for connection state to change
                 connectionState.collect { state ->
                     when (state) {
@@ -123,7 +126,7 @@ class SensorViewModel(
             }
         }
     }
-    
+
     /**
      * Disconnect from current device
      */
@@ -134,7 +137,7 @@ class SensorViewModel(
             connectionError = null
         )
     }
-    
+
     /**
      * Load sensor types from backend
      */
@@ -142,7 +145,7 @@ class SensorViewModel(
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoadingSensorTypes = true)
-                
+
                 val result = sensorRepository.getSensorTypes()
                 result.fold(
                     onSuccess = { types ->
@@ -170,7 +173,7 @@ class SensorViewModel(
             }
         }
     }
-    
+
     /**
      * Create a new sensor type
      */
@@ -183,7 +186,7 @@ class SensorViewModel(
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isCreatingSensorType = true)
-                
+
                 val result = sensorRepository.createSensorType(name, unit, loggingFrequency, description)
                 result.fold(
                     onSuccess = { sensorType ->
@@ -212,7 +215,7 @@ class SensorViewModel(
             }
         }
     }
-    
+
     /**
      * Set the current trip ID for sensor data recording
      */
@@ -220,7 +223,7 @@ class SensorViewModel(
         _currentTripId.value = tripId
         Log.d(TAG, "Set current trip ID: $tripId")
     }
-    
+
     /**
      * Relay sensor data to backend API
      */
@@ -230,7 +233,7 @@ class SensorViewModel(
             Log.w(TAG, "No current trip ID set, skipping sensor data relay")
             return
         }
-        
+
         viewModelScope.launch {
             try {
                 val result = sensorRepository.recordSensorData(
@@ -239,7 +242,7 @@ class SensorViewModel(
                     value = sensorData.value,
                     timestamp = java.util.Date(sensorData.timestamp)
                 )
-                
+
                 result.fold(
                     onSuccess = { reading ->
                         Log.d(TAG, "Successfully relayed sensor data: ${reading.id}")
@@ -253,42 +256,42 @@ class SensorViewModel(
             }
         }
     }
-    
+
     /**
      * Send data to connected device
      */
     fun sendDataToDevice(data: String) {
         bluetoothManager.sendData(data)
     }
-    
+
     /**
      * Clear sensor data buffer
      */
     fun clearSensorData() {
         bluetoothManager.clearSensorData()
     }
-    
+
     /**
      * Clear connection error
      */
     fun clearConnectionError() {
         _uiState.value = _uiState.value.copy(connectionError = null)
     }
-    
+
     /**
      * Clear sensor types error
      */
     fun clearSensorTypesError() {
         _uiState.value = _uiState.value.copy(sensorTypesError = null)
     }
-    
+
     /**
      * Clear sensor type creation error
      */
     fun clearSensorTypeCreationError() {
         _uiState.value = _uiState.value.copy(sensorTypeCreationError = null)
     }
-    
+
     override fun onCleared() {
         super.onCleared()
         bluetoothManager.release()

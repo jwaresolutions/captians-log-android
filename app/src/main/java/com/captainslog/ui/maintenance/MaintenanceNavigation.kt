@@ -3,7 +3,7 @@ package com.captainslog.ui.maintenance
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.captainslog.ui.components.BreadcrumbItem
 import com.captainslog.viewmodel.BoatViewModel
 import com.captainslog.viewmodel.MaintenanceTemplateViewModel
@@ -14,8 +14,8 @@ fun MaintenanceNavigation(
     onBreadcrumbChanged: (List<BreadcrumbItem>, (() -> Unit)?) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
-    val maintenanceViewModel: MaintenanceTemplateViewModel = viewModel { MaintenanceTemplateViewModel(context) }
-    val boatViewModel: BoatViewModel = viewModel { BoatViewModel(context.applicationContext as android.app.Application) }
+    val maintenanceViewModel: MaintenanceTemplateViewModel = hiltViewModel()
+    val boatViewModel: BoatViewModel = hiltViewModel()
 
     var currentScreen by remember { mutableStateOf(MaintenanceScreen.List) }
     var selectedTemplateId by remember { mutableStateOf<String?>(null) }

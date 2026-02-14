@@ -45,7 +45,7 @@ import com.captainslog.database.migrations.MIGRATION_9_10
         OfflineChangeEntity::class
     ],
     version = 10,
-    exportSchema = false
+    exportSchema = true
 )
 @TypeConverters(DateConverter::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -61,26 +61,4 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun markedLocationDao(): MarkedLocationDao
     abstract fun offlineChangeDao(): OfflineChangeDao
 
-    companion object {
-        @Volatile
-        private var INSTANCE: AppDatabase? = null
-
-        fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "boat_tracking_database"
-                )
-                    .addMigrations(MIGRATION_9_10)
-                    .build()
-                INSTANCE = instance
-                instance
-            }
-        }
-
-        fun getInstance(context: Context): AppDatabase {
-            return getDatabase(context)
-        }
-    }
 }

@@ -137,16 +137,16 @@ class ConnectionManagerPropertyTest : StringSpec({
             // Verify that ConnectionManager class has the required methods
             val methods = ConnectionManager::class.java.declaredMethods
             val methodNames = methods.map { it.name }
-            
+
             // Should have getApiService method (standard connection with local priority)
             methodNames.contains("getApiService") shouldBe true
-            
-            // Should have getApiServicePreferLocal method (for WiFi photo uploads)
-            methodNames.contains("getApiServicePreferLocal") shouldBe true
-            
+
+            // Should have getApiServiceOrNull method (standalone-aware connection)
+            methodNames.contains("getApiServiceOrNull") shouldBe true
+
             // Should have getCurrentConnectionType method (to check which connection is active)
             methodNames.contains("getCurrentConnectionType") shouldBe true
-            
+
             // Should have network detection methods
             methodNames.contains("isOnWiFi") shouldBe true
             methodNames.contains("isOnMobileData") shouldBe true

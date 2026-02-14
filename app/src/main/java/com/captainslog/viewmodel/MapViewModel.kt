@@ -4,8 +4,6 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.captainslog.connection.ConnectionManager
-import com.captainslog.database.AppDatabase
 import com.captainslog.database.entities.GpsPointEntity
 import com.captainslog.database.entities.MarkedLocationEntity
 import com.captainslog.database.entities.TripEntity
@@ -21,39 +19,33 @@ import com.captainslog.nautical.service.TideStation
 import com.captainslog.nautical.service.TidePrediction
 import com.captainslog.nautical.service.OpenMeteoService
 import com.captainslog.nautical.service.MarineWeather
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 
 /**
  * ViewModel for the map screen
  */
-class MapViewModel(application: Application) : AndroidViewModel(application) {
-    
+@HiltViewModel
+class MapViewModel @Inject constructor(
+    application: Application,
+    private val tripRepository: TripRepository,
+    private val markedLocationRepository: MarkedLocationRepository,
+    val nauticalSettingsManager: NauticalSettingsManager
+) : AndroidViewModel(application) {
+
     companion object {
         private const val TAG = "MapViewModel"
     }
 
     private val _uiState = MutableStateFlow(MapUiState())
     val uiState: StateFlow<MapUiState> = _uiState.asStateFlow()
-
-    private val tripRepository: TripRepository
-    private val markedLocationRepository: MarkedLocationRepository
-    private val connectionManager: ConnectionManager
-    val nauticalSettingsManager: NauticalSettingsManager
     private val aisStreamService = AISStreamService()
     private var aisCollectionJob: kotlinx.coroutines.Job? = null
 
     init {
-        val database = AppDatabase.getInstance(application)
-        connectionManager = ConnectionManager.getInstance(application)
-        connectionManager.initialize()
-        
-        // Initialize repositories with ConnectionManager
-        tripRepository = TripRepository(database, application)
-        markedLocationRepository = MarkedLocationRepository(database, connectionManager)
-        nauticalSettingsManager = NauticalSettingsManager.getInstance(application)
-
         // Load initial data
         loadTrips()
         loadMarkedLocations()
@@ -66,7 +58,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
-                
+
                 tripRepository.getAllTrips().collect { trips ->
                     val filteredTrips = if (_uiState.value.filter.showTrips) {
                         trips.filter { it.endTime != null } // Only show completed trips
@@ -168,7 +160,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             currentLatitude = latitude,
             currentLongitude = longitude
         )
-        
+
         // Reload marked locations with new distance calculations
         loadMarkedLocations()
     }
@@ -187,7 +179,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
-                
+
                 val result = markedLocationRepository.createMarkedLocation(
                     name = name,
                     latitude = latitude,
@@ -241,7 +233,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun updateFilter(filter: MapFilter) {
         _uiState.value = _uiState.value.copy(filter = filter)
-        
+
         // Reload data based on new filter
         loadTrips()
         loadMarkedLocations()
@@ -270,7 +262,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                         } else {
                             0.0
                         }
-                        
+
                         MarkedLocationWithDistance(
                             location = location,
                             distanceMeters = distance
@@ -295,7 +287,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     fun getNearbyMarkedLocations(radiusMeters: Double) {
         val currentLat = _uiState.value.currentLatitude
         val currentLon = _uiState.value.currentLongitude
-        
+
         if (currentLat == null || currentLon == null) {
             Log.w(TAG, "Current location not available for nearby search")
             return
@@ -328,13 +320,13 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         val earthRadius = 6371000.0 // Earth radius in meters
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
-        
+
         val a = kotlin.math.sin(dLat / 2) * kotlin.math.sin(dLat / 2) +
                 kotlin.math.cos(Math.toRadians(lat1)) * kotlin.math.cos(Math.toRadians(lat2)) *
                 kotlin.math.sin(dLon / 2) * kotlin.math.sin(dLon / 2)
-        
+
         val c = 2 * kotlin.math.atan2(kotlin.math.sqrt(a), kotlin.math.sqrt(1 - a))
-        
+
         return earthRadius * c
     }
 

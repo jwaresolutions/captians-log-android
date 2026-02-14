@@ -9,37 +9,37 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.concurrent.TimeUnit
 import com.captainslog.network.NetworkMonitor
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
+import androidx.hilt.work.HiltWorker
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 
 /**
  * Enhanced sync status manager with visual indicators and aggressive retry logic
- * 
+ *
  * Status States:
  * - SUCCESS (Green): Last sync successful
  * - IN_PROGRESS (Blue/Animated): Sync currently running
  * - WARNING (Yellow): First sync failure, retrying every 30 seconds
  * - ERROR (Red): Failed for 5+ minutes, still retrying but less frequently
  */
-class SyncStatusManager(private val context: Context) {
+@Singleton
+class SyncStatusManager @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val networkMonitor: NetworkMonitor,
+    private val syncOrchestrator: SyncOrchestrator
+) {
 
     companion object {
         const val TAG = "SyncStatusManager"
         const val RETRY_SYNC_WORK_NAME = "retry_sync_work"
-        
+
         // Retry intervals
         private const val FAST_RETRY_INTERVAL_SECONDS = 30L  // 30 seconds for first failures
         private const val FAST_RETRY_DURATION_MINUTES = 5L   // Fast retry for 5 minutes
         private const val SLOW_RETRY_INTERVAL_MINUTES = 2L   // 2 minutes after 5 minutes of failures
-        
-        @Volatile
-        private var INSTANCE: SyncStatusManager? = null
-
-        fun getInstance(context: Context): SyncStatusManager {
-            return INSTANCE ?: synchronized(this) {
-                val instance = SyncStatusManager(context.applicationContext)
-                INSTANCE = instance
-                instance
-            }
-        }
     }
 
     /**
@@ -93,7 +93,7 @@ class SyncStatusManager(private val context: Context) {
         _syncStatus.value = SyncStatus.SUCCESS
         _lastSyncTime.value = System.currentTimeMillis()
         // Sync success proves server is reachable - update NetworkMonitor to dismiss "Cannot Reach Server" banner
-        NetworkMonitor.getInstance(context).reportServerReachable()
+        networkMonitor.reportServerReachable()
         _syncMessage.value = if (syncedCount > 0) {
             "Synced $syncedCount item(s)"
         } else {
@@ -206,12 +206,11 @@ class SyncStatusManager(private val context: Context) {
      */
     fun forceRetry() {
         Log.d(TAG, "Force retry requested")
-        
+
         // Trigger immediate sync
-        val syncManager = SyncManager.getInstance(context)
-        syncManager.triggerImmediateSync()
-        syncManager.triggerImmediatePhotoSync()
-        syncManager.triggerImmediateTemplateSync()
+        syncOrchestrator.triggerImmediateSync()
+        syncOrchestrator.triggerImmediatePhotoSync()
+        syncOrchestrator.triggerImmediateTemplateSync()
     }
 
     /**
@@ -284,9 +283,12 @@ class SyncStatusManager(private val context: Context) {
 /**
  * WorkManager worker for retry sync operations
  */
-class RetrySyncWorker(
-    context: Context,
-    params: WorkerParameters
+@HiltWorker
+class RetrySyncWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val syncStatusManager: SyncStatusManager,
+    private val syncOrchestrator: SyncOrchestrator
 ) : CoroutineWorker(context, params) {
 
     companion object {
@@ -297,14 +299,11 @@ class RetrySyncWorker(
         try {
             Log.d(TAG, "Retry sync worker started")
             
-            val syncStatusManager = SyncStatusManager.getInstance(applicationContext)
-            val syncManager = SyncManager.getInstance(applicationContext)
-            
             // Report sync started
             syncStatusManager.reportSyncStarted()
             
             // Attempt sync
-            syncManager.triggerImmediateSync()
+            syncOrchestrator.triggerImmediateSync()
             
             // Note: The actual success/failure will be reported by the individual sync workers
             // This worker just triggers the retry

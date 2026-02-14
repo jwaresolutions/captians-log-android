@@ -20,7 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.captainslog.database.entities.PhotoEntity
@@ -39,7 +39,7 @@ fun PhotoGrid(
     maxPhotosToShow: Int = 6,
     photoSize: androidx.compose.ui.unit.Dp = 80.dp,
     showTitle: Boolean = true,
-    photoViewModel: PhotoViewModel = viewModel()
+    photoViewModel: PhotoViewModel = hiltViewModel()
 ) {
     // Collect photos for this entity
     val photos by photoViewModel.getPhotosForEntity(entityType, entityId).collectAsState(initial = emptyList())

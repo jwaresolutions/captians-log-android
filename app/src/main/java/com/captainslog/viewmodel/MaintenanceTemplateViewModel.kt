@@ -1,30 +1,21 @@
 package com.captainslog.viewmodel
 
-import android.content.Context
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.captainslog.database.AppDatabase
+import com.captainslog.database.dao.MaintenanceTemplateDao
+import com.captainslog.database.dao.MaintenanceEventDao
 import com.captainslog.database.entities.MaintenanceTemplateEntity
 import com.captainslog.database.entities.MaintenanceEventEntity
-
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
+import javax.inject.Inject
 
-data class MaintenanceTemplateUiState(
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val message: String? = null
-)
-
-class MaintenanceTemplateViewModel(context: Context) : ViewModel() {
-    private val database = AppDatabase.getDatabase(context)
-    private val templateDao = database.maintenanceTemplateDao()
-    private val eventDao = database.maintenanceEventDao()
-
-
-    private val _uiState = MutableStateFlow(MaintenanceTemplateUiState())
-    val uiState: StateFlow<MaintenanceTemplateUiState> = _uiState.asStateFlow()
+@HiltViewModel
+class MaintenanceTemplateViewModel @Inject constructor(
+    private val templateDao: MaintenanceTemplateDao,
+    private val eventDao: MaintenanceEventDao
+) : BaseViewModel() {
 
     // Templates (Schedule tab)
     val allTemplates: Flow<List<MaintenanceTemplateEntity>> = templateDao.getAllActiveTemplates()
@@ -55,87 +46,51 @@ class MaintenanceTemplateViewModel(context: Context) : ViewModel() {
         recurrenceType: String,
         recurrenceInterval: Int
     ) {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+        launchWithErrorHandling(
+            onSuccess = { setSuccess("Template created successfully") }
+        ) {
+            val template = MaintenanceTemplateEntity(
+                boatId = boatId,
+                title = title,
+                description = description,
+                component = component,
+                estimatedCost = estimatedCost,
+                estimatedTime = estimatedTime,
+                recurrenceType = recurrenceType,
+                recurrenceInterval = recurrenceInterval
+            )
 
-                val template = MaintenanceTemplateEntity(
-                    boatId = boatId,
-                    title = title,
-                    description = description,
-                    component = component,
-                    estimatedCost = estimatedCost,
-                    estimatedTime = estimatedTime,
-                    recurrenceType = recurrenceType,
-                    recurrenceInterval = recurrenceInterval
-                )
+            // Save locally first
+            templateDao.insertTemplate(template)
 
-                // Save locally first
-                templateDao.insertTemplate(template)
+            // Generate the first recurring event
+            generateNextEvent(template)
 
-                // Generate the first recurring event
-                generateNextEvent(template)
-
-                // TODO: Sync to backend API
-                // connectionManager.createMaintenanceTemplate(template)
-
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    message = "Template created successfully"
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Failed to create template: ${e.message}"
-                )
-            }
+            // TODO: Sync to backend API
+            // connectionManager.createMaintenanceTemplate(template)
         }
     }
 
     fun updateTemplate(template: MaintenanceTemplateEntity) {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+        launchWithErrorHandling(
+            onSuccess = { setSuccess("Template updated successfully") }
+        ) {
+            val updatedTemplate = template.copy(updatedAt = Date())
+            templateDao.updateTemplate(updatedTemplate)
 
-                val updatedTemplate = template.copy(updatedAt = Date())
-                templateDao.updateTemplate(updatedTemplate)
-
-                // TODO: Sync to backend API
-                // connectionManager.updateMaintenanceTemplate(updatedTemplate)
-
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    message = "Template updated successfully"
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Failed to update template: ${e.message}"
-                )
-            }
+            // TODO: Sync to backend API
+            // connectionManager.updateMaintenanceTemplate(updatedTemplate)
         }
     }
 
     fun deleteTemplate(templateId: String) {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+        launchWithErrorHandling(
+            onSuccess = { setSuccess("Template deleted successfully") }
+        ) {
+            templateDao.deleteTemplateById(templateId)
 
-                templateDao.deleteTemplateById(templateId)
-
-                // TODO: Sync to backend API
-                // connectionManager.deleteMaintenanceTemplate(templateId)
-
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    message = "Template deleted successfully"
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Failed to delete template: ${e.message}"
-                )
-            }
+            // TODO: Sync to backend API
+            // connectionManager.deleteMaintenanceTemplate(templateId)
         }
     }
 
@@ -145,41 +100,29 @@ class MaintenanceTemplateViewModel(context: Context) : ViewModel() {
         actualTime: Int?,
         notes: String?
     ) {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+        launchWithErrorHandling(
+            onSuccess = { setSuccess("Event completed successfully") }
+        ) {
+            eventDao.completeEvent(eventId, Date(), actualCost, actualTime, notes)
 
-                eventDao.completeEvent(eventId, Date(), actualCost, actualTime, notes)
-
-                // Generate next recurring event from template
-                val completedEvent = eventDao.getEventByIdSync(eventId)
-                if (completedEvent != null) {
-                    val template = templateDao.getTemplateByIdSync(completedEvent.templateId)
-                    if (template != null && template.isActive) {
-                        generateNextEvent(template, completedEvent.dueDate)
-                    }
+            // Generate next recurring event from template
+            val completedEvent = eventDao.getEventByIdSync(eventId)
+            if (completedEvent != null) {
+                val template = templateDao.getTemplateByIdSync(completedEvent.templateId)
+                if (template != null && template.isActive) {
+                    generateNextEvent(template, completedEvent.dueDate)
                 }
-
-                // TODO: Sync to backend API
-                // connectionManager.completeMaintenanceEvent(eventId, actualCost, actualTime, notes)
-
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    message = "Event completed successfully"
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Failed to complete event: ${e.message}"
-                )
             }
+
+            // TODO: Sync to backend API
+            // connectionManager.completeMaintenanceEvent(eventId, actualCost, actualTime, notes)
         }
     }
 
     fun formatRecurrence(template: MaintenanceTemplateEntity): String {
         val interval = template.recurrenceInterval
         val type = template.recurrenceType
-        
+
         return when (type) {
             "days" -> if (interval == 1) "Daily" else "Every $interval days"
             "weeks" -> if (interval == 1) "Weekly" else "Every $interval weeks"
@@ -198,7 +141,7 @@ class MaintenanceTemplateViewModel(context: Context) : ViewModel() {
 
     fun getEventColor(event: MaintenanceEventEntity): TaskColor {
         if (event.completedAt != null) return TaskColor.GREEN
-        
+
         val daysUntilDue = getDaysUntilDue(event)
         return when {
             daysUntilDue < 0 -> TaskColor.RED // Overdue
@@ -208,11 +151,7 @@ class MaintenanceTemplateViewModel(context: Context) : ViewModel() {
     }
 
     fun clearMessage() {
-        _uiState.value = _uiState.value.copy(message = null)
-    }
-
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        clearSuccess()
     }
 
     private suspend fun generateNextEvent(template: MaintenanceTemplateEntity, fromDate: Date = Date()) {
@@ -244,4 +183,3 @@ enum class TaskColor {
     GREEN,    // Completed
     GRAY      // Future (not due soon)
 }
-

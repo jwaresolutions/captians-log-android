@@ -13,8 +13,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.captainslog.BoatTrackingApplication
-import com.captainslog.sync.ComprehensiveSyncManager
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.captainslog.database.AppDatabase
+import com.captainslog.viewmodel.SyncStatusViewModel
 
 /**
  * A reusable component that shows sync status across the app
@@ -24,15 +25,13 @@ import com.captainslog.sync.ComprehensiveSyncManager
 fun SyncStatusIndicator(
     modifier: Modifier = Modifier,
     showText: Boolean = true,
-    onSyncClick: (() -> Unit)? = null
+    onSyncClick: (() -> Unit)? = null,
+    viewModel: SyncStatusViewModel = hiltViewModel(),
+    database: AppDatabase
 ) {
-    val context = LocalContext.current
-    val database = (context.applicationContext as BoatTrackingApplication).database
-    val syncManager = remember { ComprehensiveSyncManager.getInstance(context, database) }
-    
-    val isSyncing by syncManager.isSyncing.collectAsState()
-    val syncProgress by syncManager.syncProgress.collectAsState()
-    val lastSyncTime by syncManager.lastSyncTime.collectAsState()
+    val isSyncing by viewModel.isSyncing.collectAsState()
+    val syncProgress by viewModel.syncProgress.collectAsState()
+    val lastSyncTime by viewModel.lastSyncTime.collectAsState()
     
     Row(
         modifier = modifier,
@@ -41,9 +40,9 @@ fun SyncStatusIndicator(
     ) {
         // Sync icon
         IconButton(
-            onClick = { 
+            onClick = {
                 if (!isSyncing) {
-                    onSyncClick?.invoke() ?: syncManager.performFullSync()
+                    onSyncClick?.invoke() ?: viewModel.performFullSync()
                 }
             },
             enabled = !isSyncing
@@ -58,13 +57,12 @@ fun SyncStatusIndicator(
                 }
                 lastSyncTime != null -> {
                     // Check if we actually have data to confirm sync worked
-                    val database = (context.applicationContext as BoatTrackingApplication).database
                     var hasData by remember { mutableStateOf(false) }
-                    
+
                     LaunchedEffect(lastSyncTime) {
                         hasData = database.boatDao().getAllBoatsSync().isNotEmpty()
                     }
-                    
+
                     if (hasData) {
                         Icon(
                             imageVector = Icons.Default.CloudDone,
@@ -139,11 +137,13 @@ fun SyncStatusIndicator(
 @Composable
 fun CompactSyncStatusIndicator(
     modifier: Modifier = Modifier,
-    onSyncClick: (() -> Unit)? = null
+    onSyncClick: (() -> Unit)? = null,
+    database: AppDatabase
 ) {
     SyncStatusIndicator(
         modifier = modifier,
         showText = false,
-        onSyncClick = onSyncClick
+        onSyncClick = onSyncClick,
+        database = database
     )
 }

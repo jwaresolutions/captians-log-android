@@ -16,7 +16,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.captainslog.mode.AppModeManager
+import com.captainslog.viewmodel.MainNavigationViewModel
 import com.captainslog.ui.components.BreadcrumbItem
 import com.captainslog.ui.home.HomeScreen
 import com.captainslog.ui.license.LicenseProgressScreen
@@ -36,10 +38,12 @@ import com.captainslog.ui.trips.TripNavigation
  * Top bar shows breadcrumb trail.
  */
 @Composable
-fun MainNavigation(onSignOut: () -> Unit = {}) {
+fun MainNavigation(
+    onSignOut: () -> Unit = {},
+    viewModel: MainNavigationViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
-    val appModeManager = remember { AppModeManager.getInstance(context) }
-    val isStandalone = appModeManager.isStandalone()
+    val isStandalone = viewModel.appModeManager.isStandalone()
 
     var selectedTab by remember { mutableStateOf(NavigationTab.Home) }
 
@@ -237,7 +241,9 @@ fun MainNavigation(onSignOut: () -> Unit = {}) {
                     onBreadcrumbChanged = { crumbs, backToRoot ->
                         nestedBreadcrumbs = crumbs
                         childBackHandler = backToRoot
-                    }
+                    },
+                    database = viewModel.database,
+                    appModeManager = viewModel.appModeManager
                 )
             }
         }

@@ -6,28 +6,25 @@ import com.captainslog.nautical.model.NauticalProviderConfig
 import com.captainslog.nautical.model.NauticalSettings
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class NauticalSettingsManager(context: Context) {
+@Singleton
+class NauticalSettingsManager @Inject constructor(
+    @ApplicationContext context: Context
+) {
 
     companion object {
         private const val PREFS_NAME = "nautical_settings"
         private const val KEY_SETTINGS = "settings_json"
-
-        @Volatile
-        private var instance: NauticalSettingsManager? = null
-
-        fun getInstance(context: Context): NauticalSettingsManager {
-            return instance ?: synchronized(this) {
-                instance ?: NauticalSettingsManager(context.applicationContext).also { instance = it }
-            }
-        }
     }
 
     private val prefs: SharedPreferences =
-        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val gson = Gson()
 
     private val _settings = MutableStateFlow(loadSettings())

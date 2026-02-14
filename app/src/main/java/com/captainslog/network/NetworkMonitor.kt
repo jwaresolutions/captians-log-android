@@ -11,25 +11,21 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.*
 import com.captainslog.connection.ConnectionManager
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Monitors network connectivity and provides real-time connection status
  */
-class NetworkMonitor(private val context: Context) {
-    
+@Singleton
+class NetworkMonitor @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val connectionManager: ConnectionManager
+) {
+
     companion object {
         private const val TAG = "NetworkMonitor"
-        
-        @Volatile
-        private var INSTANCE: NetworkMonitor? = null
-        
-        fun getInstance(context: Context): NetworkMonitor {
-            return INSTANCE ?: synchronized(this) {
-                val instance = NetworkMonitor(context.applicationContext)
-                INSTANCE = instance
-                instance
-            }
-        }
     }
     
     private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -139,7 +135,6 @@ class NetworkMonitor(private val context: Context) {
         }
         serverCheckJob = scope.launch {
             try {
-                val connectionManager = ConnectionManager.getInstance(context)
                 val (localOk, remoteOk) = connectionManager.testConnections()
                 _isServerReachable.value = localOk || remoteOk
             } catch (e: Exception) {

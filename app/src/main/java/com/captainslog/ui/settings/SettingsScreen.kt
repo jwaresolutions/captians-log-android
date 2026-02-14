@@ -20,8 +20,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.captainslog.BuildConfig
+import com.captainslog.database.AppDatabase
+import dagger.hilt.android.EntryPointAccessors
+import com.captainslog.di.DatabaseModule
 import com.captainslog.ui.components.BreadcrumbItem
 import com.captainslog.sync.ConflictLogger
 import com.captainslog.ui.settings.SyncSettingsScreen
@@ -29,6 +32,7 @@ import com.captainslog.viewmodel.TripTrackingViewModel
 import com.captainslog.mode.AppModeManager
 import com.captainslog.mode.AppMode
 import com.captainslog.security.SecurePreferences
+import com.captainslog.ui.auth.LoginViewModel
 import kotlinx.coroutines.launch
 
 /**
@@ -38,12 +42,15 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
-    viewModel: TripTrackingViewModel = viewModel(),
+    viewModel: TripTrackingViewModel = hiltViewModel(),
+    loginViewModel: LoginViewModel = hiltViewModel(),
     onNotesClick: () -> Unit = {},
     onTodosClick: () -> Unit = {},
     onSignOut: () -> Unit = {},
     onBreadcrumbChanged: (List<BreadcrumbItem>, (() -> Unit)?) -> Unit = { _, _ -> },
-    onConnectToServer: () -> Unit = {}
+    onConnectToServer: () -> Unit = {},
+    database: AppDatabase,
+    appModeManager: AppModeManager
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -59,7 +66,6 @@ fun SettingsScreen(
     var showDisconnectDialog by remember { mutableStateOf(false) }
 
     val conflictLogger = remember { ConflictLogger(context) }
-    val appModeManager = remember { AppModeManager.getInstance(context) }
     val securePreferences = remember { SecurePreferences(context) }
     val currentMode by appModeManager.currentMode.collectAsState()
 
@@ -96,7 +102,8 @@ fun SettingsScreen(
                 showShareBoat = false
                 selectedBoatId = null
             },
-            modifier = modifier
+            modifier = modifier,
+            database = database
         )
     } else if (showScanBoat) {
         com.captainslog.ui.sharing.ScanBoatScreen(
@@ -107,7 +114,8 @@ fun SettingsScreen(
                 // After successful scan, go back to boat management
                 showScanBoat = false
             },
-            modifier = modifier
+            modifier = modifier,
+            database = database
         )
     } else if (showNauticalSettings) {
         NauticalSettingsScreen(modifier = modifier)
@@ -115,6 +123,7 @@ fun SettingsScreen(
         // Simply use the original BoatListScreen - it works fine, just needs proper space
         com.captainslog.ui.boats.BoatListScreen(
             modifier = modifier,
+            database = database,
             onShareBoat = { boatId ->
                 selectedBoatId = boatId
                 showShareBoat = true
@@ -233,7 +242,6 @@ fun SettingsScreen(
                         onClick = {
                             scope.launch {
                                 // Use LoginViewModel to properly logout
-                                val loginViewModel = com.captainslog.ui.auth.LoginViewModel(context.applicationContext as android.app.Application)
                                 loginViewModel.logout()
 
                                 // Invoke sign-out callback

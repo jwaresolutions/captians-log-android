@@ -1,32 +1,23 @@
 package com.captainslog.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.captainslog.connection.ConnectionManager
-import com.captainslog.database.AppDatabase
 import com.captainslog.database.entities.TodoItemEntity
 import com.captainslog.database.entities.TodoListEntity
 import com.captainslog.repository.TodoRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 
-class TodoViewModel(application: Application) : AndroidViewModel(application) {
-
+@HiltViewModel
+class TodoViewModel @Inject constructor(
     private val todoRepository: TodoRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TodoUiState())
     val uiState: StateFlow<TodoUiState> = _uiState.asStateFlow()
-
-    init {
-        val database = AppDatabase.getDatabase(application)
-        val connectionManager = ConnectionManager.getInstance(application)
-        connectionManager.initialize()
-        
-        // Initialize repository with ConnectionManager
-        todoRepository = TodoRepository(connectionManager, database.todoListDao(), database.todoItemDao())
-    }
 
     private val _selectedListId = MutableStateFlow<String?>(null)
     val selectedListId: StateFlow<String?> = _selectedListId.asStateFlow()
@@ -34,7 +25,7 @@ class TodoViewModel(application: Application) : AndroidViewModel(application) {
     // Todo Lists
     val allTodoLists: Flow<List<TodoListEntity>> = todoRepository.getAllTodoLists()
 
-    fun getTodoListsByBoat(boatId: String): Flow<List<TodoListEntity>> = 
+    fun getTodoListsByBoat(boatId: String): Flow<List<TodoListEntity>> =
         todoRepository.getTodoListsByBoat(boatId)
 
     val generalTodoLists: Flow<List<TodoListEntity>> = todoRepository.getGeneralTodoLists()
@@ -63,7 +54,7 @@ class TodoViewModel(application: Application) : AndroidViewModel(application) {
     fun createTodoList(title: String, boatId: String? = null) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            
+
             todoRepository.createTodoList(title, boatId)
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(isLoading = false)
@@ -80,7 +71,7 @@ class TodoViewModel(application: Application) : AndroidViewModel(application) {
     fun updateTodoList(id: String, title: String?, boatId: String?) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            
+
             todoRepository.updateTodoList(id, title, boatId)
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(isLoading = false)
@@ -97,7 +88,7 @@ class TodoViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteTodoList(id: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            
+
             todoRepository.deleteTodoList(id)
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(isLoading = false)
@@ -118,7 +109,7 @@ class TodoViewModel(application: Application) : AndroidViewModel(application) {
     fun createTodoItem(listId: String, content: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            
+
             todoRepository.createTodoItem(listId, content)
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(isLoading = false)
@@ -135,7 +126,7 @@ class TodoViewModel(application: Application) : AndroidViewModel(application) {
     fun updateTodoItem(id: String, content: String?, completed: Boolean?) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            
+
             todoRepository.updateTodoItem(id, content, completed)
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(isLoading = false)
@@ -163,7 +154,7 @@ class TodoViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteTodoItem(id: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            
+
             todoRepository.deleteTodoItem(id)
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(isLoading = false)
@@ -180,7 +171,7 @@ class TodoViewModel(application: Application) : AndroidViewModel(application) {
     fun syncTodoLists() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            
+
             todoRepository.syncTodoLists()
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(isLoading = false)

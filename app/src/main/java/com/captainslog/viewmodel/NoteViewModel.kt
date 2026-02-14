@@ -1,35 +1,24 @@
 package com.captainslog.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.captainslog.connection.ConnectionManager
-import com.captainslog.database.AppDatabase
 import com.captainslog.database.entities.NoteEntity
 import com.captainslog.repository.NoteRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 
 /**
  * ViewModel for managing note data and operations.
  * Provides UI state and handles note CRUD operations with sync.
  */
-class NoteViewModel(application: Application) : AndroidViewModel(application) {
-
+@HiltViewModel
+class NoteViewModel @Inject constructor(
     private val repository: NoteRepository
-    private val connectionManager: ConnectionManager
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
-
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error
-
-    private val _successMessage = MutableStateFlow<String?>(null)
-    val successMessage: StateFlow<String?> = _successMessage
+) : BaseViewModel() {
 
     private val _selectedNoteType = MutableStateFlow("general")
     val selectedNoteType: StateFlow<String> = _selectedNoteType
@@ -41,13 +30,6 @@ class NoteViewModel(application: Application) : AndroidViewModel(application) {
     val availableTags: StateFlow<List<String>> = _availableTags
 
     init {
-        val database = AppDatabase.getDatabase(application)
-        connectionManager = ConnectionManager.getInstance(application)
-        connectionManager.initialize()
-        
-        // Initialize repository with ConnectionManager
-        repository = NoteRepository(database, connectionManager)
-        
         // Initial sync from API
         syncNotesFromApi()
         loadAvailableTags()
@@ -107,38 +89,34 @@ class NoteViewModel(application: Application) : AndroidViewModel(application) {
         tags: List<String> = emptyList()
     ) {
         if (content.isBlank()) {
-            _error.value = "Note content cannot be empty"
+            setError("Note content cannot be empty")
             return
         }
 
         if (type !in listOf("general", "boat", "trip")) {
-            _error.value = "Invalid note type"
+            setError("Invalid note type")
             return
         }
 
         if (type == "boat" && boatId.isNullOrBlank()) {
-            _error.value = "Boat ID is required for boat-specific notes"
+            setError("Boat ID is required for boat-specific notes")
             return
         }
 
         if (type == "trip" && tripId.isNullOrBlank()) {
-            _error.value = "Trip ID is required for trip-specific notes"
+            setError("Trip ID is required for trip-specific notes")
             return
         }
 
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            
-            val result = repository.createNote(content, type, boatId, tripId, tags)
-            
-            _isLoading.value = false
-            
-            if (result.isSuccess) {
-                _successMessage.value = "Note created successfully"
+        launchWithErrorHandling(
+            onSuccess = {
+                setSuccess("Note created successfully")
                 loadAvailableTags() // Refresh tags
-            } else {
-                _error.value = result.exceptionOrNull()?.message ?: "Failed to create note"
+            }
+        ) {
+            val result = repository.createNote(content, type, boatId, tripId, tags)
+            if (result.isFailure) {
+                throw result.exceptionOrNull() ?: Exception("Failed to create note")
             }
         }
     }
@@ -152,25 +130,21 @@ class NoteViewModel(application: Application) : AndroidViewModel(application) {
         tags: List<String>? = null
     ) {
         if (content != null && content.isBlank()) {
-            _error.value = "Note content cannot be empty"
+            setError("Note content cannot be empty")
             return
         }
 
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            
-            val result = repository.updateNote(noteId, content, tags)
-            
-            _isLoading.value = false
-            
-            if (result.isSuccess) {
-                _successMessage.value = "Note updated successfully"
+        launchWithErrorHandling(
+            onSuccess = {
+                setSuccess("Note updated successfully")
                 if (tags != null) {
                     loadAvailableTags() // Refresh tags if they were updated
                 }
-            } else {
-                _error.value = result.exceptionOrNull()?.message ?: "Failed to update note"
+            }
+        ) {
+            val result = repository.updateNote(noteId, content, tags)
+            if (result.isFailure) {
+                throw result.exceptionOrNull() ?: Exception("Failed to update note")
             }
         }
     }
@@ -179,18 +153,12 @@ class NoteViewModel(application: Application) : AndroidViewModel(application) {
      * Delete a note
      */
     fun deleteNote(noteId: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            
+        launchWithErrorHandling(
+            onSuccess = { setSuccess("Note deleted successfully") }
+        ) {
             val result = repository.deleteNote(noteId)
-            
-            _isLoading.value = false
-            
-            if (result.isSuccess) {
-                _successMessage.value = "Note deleted successfully"
-            } else {
-                _error.value = result.exceptionOrNull()?.message ?: "Failed to delete note"
+            if (result.isFailure) {
+                throw result.exceptionOrNull() ?: Exception("Failed to delete note")
             }
         }
     }
@@ -218,10 +186,8 @@ class NoteViewModel(application: Application) : AndroidViewModel(application) {
      * Sync notes from API
      */
     fun syncNotesFromApi() {
-        viewModelScope.launch {
-            _isLoading.value = true
+        launchWithErrorHandling {
             repository.syncNotesFromApi()
-            _isLoading.value = false
         }
     }
 
@@ -229,24 +195,15 @@ class NoteViewModel(application: Application) : AndroidViewModel(application) {
      * Sync notes to API
      */
     fun syncNotesToApi() {
-        viewModelScope.launch {
-            _isLoading.value = true
+        launchWithErrorHandling {
             repository.syncNotesToApi()
-            _isLoading.value = false
         }
-    }
-
-    /**
-     * Clear error message
-     */
-    fun clearError() {
-        _error.value = null
     }
 
     /**
      * Clear success message
      */
     fun clearSuccessMessage() {
-        _successMessage.value = null
+        clearSuccess()
     }
 }

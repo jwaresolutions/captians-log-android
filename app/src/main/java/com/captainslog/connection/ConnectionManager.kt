@@ -6,13 +6,17 @@ import android.net.NetworkCapabilities
 import com.captainslog.network.ApiService
 import com.captainslog.security.CertificatePinnerBuilder
 import com.captainslog.security.SecurePreferences
+import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class ConnectionManager(private val context: Context) {
+@Singleton
+class ConnectionManager @Inject constructor(@ApplicationContext private val context: Context) {
     private val securePreferences = SecurePreferences(context)
     private var localApiService: ApiService? = null
     private var remoteApiService: ApiService? = null
@@ -46,7 +50,11 @@ class ConnectionManager(private val context: Context) {
 
         // Create OkHttp client with certificate pinning and JWT token authentication
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (com.captainslog.BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
 
         val authInterceptor = okhttp3.Interceptor { chain ->
@@ -259,16 +267,4 @@ class ConnectionManager(private val context: Context) {
         )
     }
 
-    companion object {
-        @Volatile
-        private var INSTANCE: ConnectionManager? = null
-
-        fun getInstance(context: Context): ConnectionManager {
-            return INSTANCE ?: synchronized(this) {
-                val instance = ConnectionManager(context.applicationContext)
-                INSTANCE = instance
-                instance
-            }
-        }
-    }
 }

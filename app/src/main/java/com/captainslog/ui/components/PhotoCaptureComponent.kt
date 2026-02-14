@@ -24,7 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.captainslog.database.entities.PhotoEntity
@@ -42,7 +42,7 @@ fun PhotoCaptureComponent(
     entityType: String,
     entityId: String,
     modifier: Modifier = Modifier,
-    photoViewModel: PhotoViewModel = viewModel()
+    photoViewModel: PhotoViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val photoSharingHelper = remember { PhotoSharingHelper(context) }

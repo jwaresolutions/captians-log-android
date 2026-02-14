@@ -24,12 +24,14 @@ import com.captainslog.database.AppDatabase
 import com.captainslog.database.entities.GpsPointEntity
 import com.captainslog.database.entities.TripEntity
 import com.google.android.gms.location.*
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import java.util.Date
+import javax.inject.Inject
 
 /**
  * Foreground service for continuous GPS tracking during active trips.
- * 
+ *
  * Features:
  * - Persistent notification while tracking
  * - Configurable GPS update interval (default 5 seconds)
@@ -37,6 +39,7 @@ import java.util.Date
  * - Wake lock management for continuous tracking
  * - Start/stop trip functionality
  */
+@AndroidEntryPoint
 class GpsTrackingService : Service() {
 
     companion object {
@@ -58,12 +61,14 @@ class GpsTrackingService : Service() {
         const val DEFAULT_ROLE = "captain"
     }
 
+    @Inject
+    lateinit var database: AppDatabase
+
     private val binder = LocalBinder()
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    
+
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
-    private lateinit var database: AppDatabase
     private lateinit var notificationManager: NotificationManager
     
     private var wakeLock: PowerManager.WakeLock? = null
@@ -77,16 +82,15 @@ class GpsTrackingService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        
+
         Log.d(TAG, "Service onCreate")
-        
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        database = AppDatabase.getDatabase(applicationContext)
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        
+
         createNotificationChannel()
         setupLocationCallback()
-        
+
         Log.d(TAG, "Service initialized successfully")
     }
 

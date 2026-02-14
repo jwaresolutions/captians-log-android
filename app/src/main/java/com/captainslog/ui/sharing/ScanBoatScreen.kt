@@ -44,7 +44,8 @@ import java.util.concurrent.Executors
 fun ScanBoatScreen(
     onBack: () -> Unit,
     onBoatImported: (String) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    database: AppDatabase
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -84,7 +85,6 @@ fun ScanBoatScreen(
             scope.launch {
                 try {
                     isProcessing = true
-                    val database = AppDatabase.getInstance(context)
                     val securePreferences = SecurePreferences(context)
                     val importer = BoatImporter(database.boatDao(), securePreferences)
 

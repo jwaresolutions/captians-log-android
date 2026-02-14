@@ -16,7 +16,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.captainslog.database.AppDatabase
 import com.captainslog.database.entities.BoatEntity
 import com.captainslog.viewmodel.BoatViewModel
 import kotlinx.coroutines.launch
@@ -29,7 +30,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun BoatListScreen(
     modifier: Modifier = Modifier,
-    viewModel: BoatViewModel = viewModel(),
+    viewModel: BoatViewModel = hiltViewModel(),
+    database: AppDatabase,
     onShareBoat: (String) -> Unit = {},
     onScanBoatQR: () -> Unit = {}
 ) {
@@ -76,7 +78,8 @@ fun BoatListScreen(
                         )
                     }
                     com.captainslog.ui.components.CompactSyncStatusIndicator(
-                        onSyncClick = { viewModel.performFullSync() }
+                        onSyncClick = { viewModel.performFullSync() },
+                        database = database
                     )
                 }
             )
@@ -335,7 +338,7 @@ fun BoatCard(
 @Composable
 fun BoatListContent(
     modifier: Modifier = Modifier,
-    viewModel: BoatViewModel = viewModel()
+    viewModel: BoatViewModel = hiltViewModel()
 ) {
     val boats by viewModel.getAllBoats().collectAsState(initial = emptyList())
     val isLoading by viewModel.isLoading.collectAsState()

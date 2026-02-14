@@ -5,22 +5,25 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.captainslog.database.AppDatabase
 import com.captainslog.database.entities.PhotoEntity
 import com.captainslog.repository.PhotoRepository
-import com.captainslog.sync.SyncManager
+import com.captainslog.sync.SyncOrchestrator
 import com.captainslog.util.PhotoCaptureHelper
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * ViewModel for managing photo operations
  */
-class PhotoViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class PhotoViewModel @Inject constructor(
+    application: Application,
+    private val photoRepository: PhotoRepository,
+    private val syncOrchestrator: SyncOrchestrator
+) : AndroidViewModel(application) {
 
-    private val database = AppDatabase.getInstance(application)
-    private val photoRepository = PhotoRepository(database, application)
-    private val syncManager = SyncManager.getInstance(application)
     private val photoCaptureHelper = PhotoCaptureHelper(application)
 
     companion object {
@@ -86,7 +89,7 @@ class PhotoViewModel(application: Application) : AndroidViewModel(application) {
                 onSuccess(photoEntity)
 
                 // Trigger immediate photo sync if on WiFi
-                syncManager.triggerImmediatePhotoSync()
+                syncOrchestrator.triggerImmediatePhotoSync()
 
                 // Update unuploaded count
                 _unuploadedPhotoCount.value = photoRepository.getUnuploadedPhotoCount()
@@ -137,7 +140,7 @@ class PhotoViewModel(application: Application) : AndroidViewModel(application) {
      * Trigger immediate photo sync
      */
     fun triggerPhotoSync() {
-        syncManager.triggerImmediatePhotoSync()
+        syncOrchestrator.triggerImmediatePhotoSync()
         Log.d(TAG, "Triggered immediate photo sync")
     }
 

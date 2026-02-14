@@ -6,6 +6,7 @@ import com.captainslog.connection.ConnectionManager
 import com.captainslog.database.AppDatabase
 import com.captainslog.security.SecurePreferences
 import com.google.gson.Gson
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -14,31 +15,25 @@ import okhttp3.sse.EventSource
 import okhttp3.sse.EventSourceListener
 import okhttp3.sse.EventSources
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * SSE client that listens for real-time sync events from the backend.
  * When an event arrives, it triggers sync for the relevant data type
  * using ComprehensiveSyncManager.
  */
-class SseClient(
-    private val context: Context,
-    private val database: AppDatabase
+@Singleton
+class SseClient @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val database: AppDatabase,
+    private val connectionManager: ConnectionManager,
+    private val syncOrchestrator: SyncOrchestrator
 ) {
     companion object {
         private const val TAG = "SseClient"
         private const val INITIAL_RETRY_DELAY_MS = 1000L
         private const val MAX_RETRY_DELAY_MS = 60000L
-
-        @Volatile
-        private var INSTANCE: SseClient? = null
-
-        fun getInstance(context: Context, database: AppDatabase): SseClient {
-            return INSTANCE ?: synchronized(this) {
-                val instance = SseClient(context.applicationContext, database)
-                INSTANCE = instance
-                instance
-            }
-        }
     }
 
     private val securePreferences = SecurePreferences(context)
@@ -53,10 +48,6 @@ class SseClient(
         .readTimeout(0, TimeUnit.SECONDS) // No read timeout for SSE
         .writeTimeout(10, TimeUnit.SECONDS)
         .build()
-
-    private val syncManager: ComprehensiveSyncManager by lazy {
-        ComprehensiveSyncManager.getInstance(context, database)
-    }
 
     fun connect() {
         if (isConnecting) return
@@ -146,9 +137,9 @@ class SseClient(
             "trips" -> DataType.TRIPS
             "notes" -> DataType.NOTES
             "todos" -> DataType.TODOS
-            "maintenance_templates" -> DataType.MAINTENANCE_TEMPLATES
-            "maintenance_events" -> DataType.MAINTENANCE_EVENTS
-            "locations" -> DataType.MARKED_LOCATIONS
+            "maintenance_templates" -> DataType.TEMPLATES
+            "maintenance_events" -> DataType.TEMPLATES
+            "locations" -> DataType.LOCATIONS
             "photos" -> DataType.PHOTOS
             else -> {
                 Log.w(TAG, "Unknown event type: ${event.type}")
@@ -156,7 +147,7 @@ class SseClient(
             }
         }
 
-        syncManager.syncDataType(dataType)
+        syncOrchestrator.syncDataType(dataType)
     }
 
     private fun scheduleReconnect() {
@@ -165,7 +156,6 @@ class SseClient(
             delay(retryDelay)
             retryDelay = (retryDelay * 2).coerceAtMost(MAX_RETRY_DELAY_MS)
 
-            val connectionManager = ConnectionManager.getInstance(context)
             if (connectionManager.hasInternetConnection()) {
                 connect()
             } else {

@@ -8,55 +8,62 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.captainslog.database.AppDatabase
 import com.captainslog.database.entities.GpsPointEntity
 import com.captainslog.database.entities.TripEntity
-import com.captainslog.repository.BoatRepository
 import com.captainslog.repository.TripRepository
 import com.captainslog.repository.TripStatistics
 import com.captainslog.service.GpsTrackingService
+import com.captainslog.sync.SyncOrchestrator
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Date
+import javax.inject.Inject
 
 /**
  * ViewModel for managing trip tracking and GPS service interaction.
  * Provides UI state and handles communication with the GPS tracking service.
  */
-class TripTrackingViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class TripTrackingViewModel @Inject constructor(
+    application: Application,
+    private val repository: TripRepository,
+    private val database: AppDatabase,
+    private val syncOrchestrator: SyncOrchestrator
+) : AndroidViewModel(application) {
 
     companion object {
         private const val TAG = "TripTrackingViewModel"
     }
 
-    private val repository: TripRepository
-    private val database: AppDatabase
     private var gpsTrackingService: GpsTrackingService? = null
     private var serviceBound = false
 
-    private val _isTracking = MutableLiveData<Boolean>(false)
-    val isTracking: LiveData<Boolean> = _isTracking
+    private val _isTracking = MutableStateFlow<Boolean>(false)
+    val isTracking: StateFlow<Boolean> = _isTracking.asStateFlow()
 
-    private val _currentTripId = MutableLiveData<String?>()
-    val currentTripId: LiveData<String?> = _currentTripId
+    private val _currentTripId = MutableStateFlow<String?>(null)
+    val currentTripId: StateFlow<String?> = _currentTripId.asStateFlow()
 
-    private val _currentTrip = MutableLiveData<TripEntity?>()
-    val currentTrip: LiveData<TripEntity?> = _currentTrip
+    private val _currentTrip = MutableStateFlow<TripEntity?>(null)
+    val currentTrip: StateFlow<TripEntity?> = _currentTrip.asStateFlow()
 
-    private val _errorMessage = MutableLiveData<String?>()
-    val errorMessage: LiveData<String?> = _errorMessage
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as GpsTrackingService.LocalBinder
             gpsTrackingService = binder.getService()
             serviceBound = true
-            
+
             Log.d(TAG, "Service connected")
-            
+
             // Update tracking state from service
             updateStateFromService()
         }
@@ -69,11 +76,6 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
-    init {
-        database = AppDatabase.getInstance(application)
-        repository = TripRepository(database, application)
-    }
-
     /**
      * Update ViewModel state from the service
      */
@@ -81,15 +83,15 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
         gpsTrackingService?.let { service ->
             val isServiceTracking = service.isTracking()
             val serviceTripId = service.getCurrentTripId()
-            
+
             Log.d(TAG, "Updating state from service - Tracking: $isServiceTracking, Trip ID: $serviceTripId")
-            
+
             // Clean up orphaned trips first
             cleanupOrphanedTrips()
-            
+
             _isTracking.value = isServiceTracking
             _currentTripId.value = serviceTripId
-            
+
             // Load current trip if tracking
             serviceTripId?.let { tripId ->
                 loadTrip(tripId)
@@ -105,15 +107,15 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
             try {
                 // Get all trips without end time (active trips)
                 val activeTrips = database.tripDao().getActiveTrips()
-                
+
                 Log.d(TAG, "Found ${activeTrips.size} active trips in database")
-                
+
                 // If service is not tracking but we have active trips, they are orphaned
                 val isServiceTracking = gpsTrackingService?.isTracking() ?: false
-                
+
                 if (!isServiceTracking && activeTrips.isNotEmpty()) {
                     Log.w(TAG, "Found ${activeTrips.size} orphaned trips (service not running)")
-                    
+
                     // End all orphaned trips
                     activeTrips.forEach { trip ->
                         Log.d(TAG, "Ending orphaned trip: ${trip.id}")
@@ -123,7 +125,7 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
                         )
                         database.tripDao().updateTrip(endedTrip)
                     }
-                    
+
                     Log.d(TAG, "Cleaned up ${activeTrips.size} orphaned trips")
                 }
             } catch (e: Exception) {
@@ -131,7 +133,7 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
             }
         }
     }
-    
+
     /**
      * Force cleanup of all orphaned trips - more aggressive version
      */
@@ -139,12 +141,12 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
         try {
             // Get all trips without end time (active trips)
             val activeTrips = database.tripDao().getActiveTrips()
-            
+
             Log.d(TAG, "Force cleanup: Found ${activeTrips.size} active trips in database")
-            
+
             if (activeTrips.isNotEmpty()) {
                 Log.w(TAG, "Force cleanup: Ending all ${activeTrips.size} active trips")
-                
+
                 // End all active trips (assume they are orphaned)
                 activeTrips.forEach { trip ->
                     Log.d(TAG, "Force cleanup: Ending trip ${trip.id}")
@@ -154,7 +156,7 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
                     )
                     database.tripDao().updateTrip(endedTrip)
                 }
-                
+
                 Log.d(TAG, "Force cleanup: Cleaned up ${activeTrips.size} trips")
             }
         } catch (e: Exception) {
@@ -194,25 +196,25 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
     ) {
         Log.d(TAG, "startTrip() called - boat: $boatId, waterType: $waterType, role: $role")
         Log.d(TAG, "Current state - isTracking: ${_isTracking.value}, currentTripId: ${_currentTripId.value}")
-        
+
         // Clear any previous error messages
         _errorMessage.value = null
-        
+
         // Force cleanup of orphaned trips before checking if tracking
         viewModelScope.launch {
             forceCleanupOrphanedTrips()
-            
+
             // After cleanup, check if service is actually tracking
             val isServiceTracking = gpsTrackingService?.isTracking() ?: false
             Log.d(TAG, "After cleanup - Service tracking: $isServiceTracking")
-            
+
             // Update our state to match service state
             _isTracking.value = isServiceTracking
             if (!isServiceTracking) {
                 _currentTripId.value = null
                 _currentTrip.value = null
             }
-            
+
             // Now check if a trip is already active
             if (_isTracking.value == true) {
                 val errorMsg = "A trip is already in progress. Please stop the current trip first."
@@ -220,12 +222,12 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
                 _errorMessage.value = errorMsg
                 return@launch
             }
-            
+
             // Continue with trip start logic
             startTripInternal(context, boatId, waterType, role, updateIntervalMs)
         }
     }
-    
+
     /**
      * Internal method to start trip after validation
      */
@@ -239,25 +241,25 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
         try {
             Log.d(TAG, "Looking up boat in database: $boatId")
             val boat = database.boatDao().getBoatById(boatId)
-            
+
             if (boat == null) {
                 val errorMsg = "Boat not found. Please select a valid boat."
                 Log.e(TAG, "Failed to start trip: $errorMsg (boatId: $boatId)")
                 _errorMessage.value = errorMsg
                 return
             }
-            
+
             Log.d(TAG, "Found boat: ${boat.name}, enabled: ${boat.enabled}")
-            
+
             if (!boat.enabled) {
                 val errorMsg = "Boat '${boat.name}' is disabled. Please enable it first."
                 Log.e(TAG, "Failed to start trip: $errorMsg")
                 _errorMessage.value = errorMsg
                 return
             }
-            
+
             Log.d(TAG, "Boat validated: ${boat.name} (${boat.id})")
-            
+
             // Boat exists and is enabled, start the service
             val intent = Intent(context, GpsTrackingService::class.java).apply {
                 action = GpsTrackingService.ACTION_START_TRIP
@@ -266,10 +268,10 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
                 putExtra(GpsTrackingService.EXTRA_ROLE, role)
                 putExtra(GpsTrackingService.EXTRA_UPDATE_INTERVAL, updateIntervalMs)
             }
-            
+
             Log.d(TAG, "Starting GPS tracking service with intent: $intent")
             Log.d(TAG, "Intent extras - boatId: $boatId, waterType: $waterType, role: $role")
-            
+
             try {
                 context.startForegroundService(intent)
                 Log.d(TAG, "startForegroundService() called successfully")
@@ -278,7 +280,7 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
                 _errorMessage.value = "Failed to start GPS service: ${e.message}"
                 return
             }
-            
+
             // Give the service a moment to start, then update state multiple times
             viewModelScope.launch {
                 // First update after 500ms
@@ -286,32 +288,32 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
                 kotlinx.coroutines.delay(500)
                 Log.d(TAG, "First state update from service")
                 updateStateFromService()
-                
+
                 // Second update after 1 second
                 kotlinx.coroutines.delay(500)
                 Log.d(TAG, "Second state update from service")
                 updateStateFromService()
-                
+
                 // Third update after 2 seconds
                 kotlinx.coroutines.delay(1000)
                 Log.d(TAG, "Third state update from service")
                 updateStateFromService()
-                
+
                 // Fourth update after 3 seconds (final check)
                 kotlinx.coroutines.delay(1000)
                 Log.d(TAG, "Final state update from service")
                 updateStateFromService()
             }
-            
+
             Log.d(TAG, "Trip start requested successfully")
-            
+
         } catch (e: Exception) {
             val errorMsg = "Failed to start trip: ${e.message}"
             Log.e(TAG, errorMsg, e)
             _errorMessage.value = errorMsg
         }
     }
-    
+
     /**
      * Clear error message
      */
@@ -327,7 +329,7 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
             updateStateFromService()
         }
     }
-    
+
     /**
      * Manually force cleanup of orphaned trips (useful for debugging)
      */
@@ -335,7 +337,7 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
         viewModelScope.launch {
             Log.d(TAG, "Manual force cleanup requested")
             forceCleanupOrphanedTrips()
-            
+
             // Reset tracking state
             val isServiceTracking = gpsTrackingService?.isTracking() ?: false
             _isTracking.value = isServiceTracking
@@ -343,17 +345,17 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
                 _currentTripId.value = null
                 _currentTrip.value = null
             }
-            
+
             Log.d(TAG, "Manual cleanup complete - isTracking: ${_isTracking.value}")
         }
     }
-    
+
     /**
      * Force stop everything - more aggressive than regular stopTrip
      */
     fun forceStopEverything(context: Context) {
         Log.d(TAG, "FORCE STOP EVERYTHING called")
-        
+
         viewModelScope.launch {
             try {
                 // Send force stop command to service
@@ -361,30 +363,30 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
                     action = "FORCE_STOP"
                 }
                 context.startService(forceStopIntent)
-                
+
                 // Also send regular stop command
                 val stopIntent = Intent(context, GpsTrackingService::class.java).apply {
                     action = GpsTrackingService.ACTION_STOP_TRIP
                 }
                 context.startService(stopIntent)
-                
+
                 // Try to stop the service entirely
                 val serviceIntent = Intent(context, GpsTrackingService::class.java)
                 context.stopService(serviceIntent)
-                
+
                 // Force cleanup all trips in database
                 forceCleanupOrphanedTrips()
-                
+
                 // Reset all state immediately
                 _isTracking.value = false
                 _currentTripId.value = null
                 _currentTrip.value = null
-                
+
                 Log.d(TAG, "Force stop complete - everything should be stopped")
-                
+
                 // Wait a moment then verify service is stopped
                 kotlinx.coroutines.delay(1000)
-                
+
                 // If service is still bound, check its state
                 gpsTrackingService?.let { service ->
                     val stillTracking = service.isTracking()
@@ -394,7 +396,7 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
                         service.forceStop()
                     }
                 }
-                
+
             } catch (e: Exception) {
                 Log.e(TAG, "Error in force stop", e)
             }
@@ -407,24 +409,24 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
     fun stopTrip(context: Context) {
         Log.d(TAG, "stopTrip() called")
         Log.d(TAG, "Current state - isTracking: ${_isTracking.value}, currentTripId: ${_currentTripId.value}")
-        
+
         viewModelScope.launch {
             try {
                 // Send stop command to service
                 val intent = Intent(context, GpsTrackingService::class.java).apply {
                     action = GpsTrackingService.ACTION_STOP_TRIP
                 }
-                
+
                 Log.d(TAG, "Sending stop command to service")
                 context.startService(intent)
-                
+
                 // Wait a moment for service to process
                 kotlinx.coroutines.delay(500)
-                
+
                 // Check if service actually stopped
                 val serviceStillRunning = gpsTrackingService?.isTracking() ?: false
                 Log.d(TAG, "After stop command - service still running: $serviceStillRunning")
-                
+
                 if (serviceStillRunning) {
                     Log.w(TAG, "Service didn't stop - trying force stop")
                     forceStopEverything(context)
@@ -432,15 +434,15 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
                     // Service stopped properly, clean up database
                     Log.d(TAG, "Service stopped properly - cleaning up database")
                     forceCleanupOrphanedTrips()
-                    
+
                     // Update state
                     _isTracking.value = false
                     _currentTripId.value = null
                     _currentTrip.value = null
-                    
+
                     Log.d(TAG, "Trip stop completed successfully")
                 }
-                
+
             } catch (e: Exception) {
                 Log.e(TAG, "Error stopping trip", e)
                 // Fallback to force stop
@@ -503,11 +505,10 @@ class TripTrackingViewModel(application: Application) : AndroidViewModel(applica
                 if (trip.id == _currentTripId.value) {
                     _currentTrip.value = trip
                 }
-                
+
                 // Trigger sync to upload manual data to backend
-                val syncManager = com.captainslog.sync.SyncManager.getInstance(getApplication())
-                syncManager.triggerImmediateSync()
-                
+                syncOrchestrator.triggerImmediateSync()
+
                 Log.d(TAG, "Manual data updated successfully for trip ${trip.id} and sync triggered")
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating manual data for trip ${trip.id}", e)

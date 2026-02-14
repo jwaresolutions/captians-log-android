@@ -10,6 +10,7 @@ import com.captainslog.security.SecurePreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Manages disconnection from the server with data ownership rules.
@@ -23,11 +24,13 @@ import javax.inject.Inject
  * - Marked Locations: Keep all (assumed user-created in current version)
  * - Maintenance Templates/Events: Keep for owned boats, delete for other boats
  */
+@Singleton
 class DisconnectManager @Inject constructor(
     private val database: AppDatabase,
     private val securePreferences: SecurePreferences,
     private val appModeManager: AppModeManager,
-    private val context: Context
+    private val context: Context,
+    private val syncOrchestrator: SyncOrchestrator
 ) {
     companion object {
         private const val TAG = "DisconnectManager"
@@ -46,13 +49,7 @@ class DisconnectManager @Inject constructor(
             // Step 1: Optionally sync all data first
             if (downloadFirst) {
                 Log.d(TAG, "Performing final sync before disconnect...")
-                val syncManager = ComprehensiveSyncManager.getInstance(context, database)
-                syncManager.performFullSync()
-
-                // Wait for sync to complete
-                while (syncManager.isSyncInProgress()) {
-                    kotlinx.coroutines.delay(100)
-                }
+                syncOrchestrator.syncAllSuspend()
                 Log.d(TAG, "Final sync completed")
             }
 

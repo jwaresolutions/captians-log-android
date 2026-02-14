@@ -7,7 +7,9 @@ import com.captainslog.database.entities.BoatEntity
 import com.captainslog.connection.ConnectionManager
 import com.captainslog.network.ApiService
 import com.captainslog.network.models.CreateBoatRequest
-import com.captainslog.sync.ImmediateSyncService
+import com.captainslog.sync.DataType
+import com.captainslog.sync.SyncOrchestrator
+import dagger.Lazy
 import kotlinx.coroutines.flow.Flow
 import java.util.Date
 
@@ -18,9 +20,10 @@ import java.util.Date
 class BoatRepository(
     private val database: AppDatabase,
     private val connectionManager: ConnectionManager,
-    private val context: Context
+    private val context: Context,
+    private val syncOrchestratorLazy: Lazy<SyncOrchestrator>
 ) {
-    private val immediateSyncService = ImmediateSyncService.getInstance(context, database)
+    private val syncOrchestrator: SyncOrchestrator get() = syncOrchestratorLazy.get()
 
     /**
      * Get all boats as a Flow for reactive updates
@@ -77,7 +80,7 @@ class BoatRepository(
             database.boatDao().insertBoat(boat)
             
             // Sync immediately if connected, queue if offline
-            immediateSyncService.syncBoat(boat.id)
+            syncOrchestrator.syncEntity(DataType.BOATS,boat.id)
             
             Result.success(boat)
         } catch (e: Exception) {
@@ -110,7 +113,7 @@ class BoatRepository(
                 database.boatDao().updateBoat(updatedBoat)
                 
                 // Sync immediately if connected, queue if offline
-                immediateSyncService.syncBoat(boatId)
+                syncOrchestrator.syncEntity(DataType.BOATS,boatId)
                 
                 Result.success(Unit)
             } else {
@@ -139,7 +142,7 @@ class BoatRepository(
             }
             
             // Sync immediately if connected, queue if offline
-            immediateSyncService.syncBoat(boatId)
+            syncOrchestrator.syncEntity(DataType.BOATS,boatId)
             
             Result.success(Unit)
         } catch (e: Exception) {

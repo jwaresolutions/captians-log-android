@@ -23,7 +23,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.captainslog.ui.components.Starfield
 import com.captainslog.viewmodel.ServerConnectionViewModel
 import com.captainslog.viewmodel.ServerConnectionState
@@ -33,7 +33,7 @@ import com.captainslog.viewmodel.ServerConnectionState
 fun ServerConnectionScreen(
     onBack: () -> Unit,
     onSuccess: () -> Unit,
-    viewModel: ServerConnectionViewModel = viewModel()
+    viewModel: ServerConnectionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()

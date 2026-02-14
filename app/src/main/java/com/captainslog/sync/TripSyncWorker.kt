@@ -14,21 +14,23 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.hilt.work.HiltWorker
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 
 /**
  * WorkManager worker for syncing trips to the backend API.
  * Handles offline storage, sync queue, and conflict resolution.
  */
-class TripSyncWorker(
-    context: Context,
-    params: WorkerParameters
+@HiltWorker
+class TripSyncWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val tripRepository: TripRepository,
+    private val connectionManager: ConnectionManager,
+    private val conflictLogger: ConflictLogger,
+    private val syncStatusManager: SyncStatusManager
 ) : CoroutineWorker(context, params) {
-
-    private val database = AppDatabase.getInstance(context)
-    private val tripRepository = TripRepository(database, context)
-    private val connectionManager = ConnectionManager.getInstance(context)
-    private val conflictLogger = ConflictLogger(context)
-    private val syncStatusManager = SyncStatusManager.getInstance(context)
 
     companion object {
         const val TAG = "TripSyncWorker"

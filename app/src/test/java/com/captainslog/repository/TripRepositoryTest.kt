@@ -24,6 +24,8 @@ class TripRepositoryTest {
     private lateinit var tripDao: TripDao
     private lateinit var gpsPointDao: GpsPointDao
     private lateinit var context: Context
+    private lateinit var connectionManager: com.captainslog.connection.ConnectionManager
+    private lateinit var syncOrchestratorLazy: dagger.Lazy<com.captainslog.sync.SyncOrchestrator>
     private lateinit var repository: TripRepository
 
     @BeforeEach
@@ -32,11 +34,17 @@ class TripRepositoryTest {
         tripDao = mockk()
         gpsPointDao = mockk()
         context = mockk()
-        
+        connectionManager = mockk(relaxed = true)
+
+        // Mock SyncOrchestrator and Lazy wrapper
+        val syncOrchestrator = mockk<com.captainslog.sync.SyncOrchestrator>(relaxed = true)
+        syncOrchestratorLazy = mockk()
+        every { syncOrchestratorLazy.get() } returns syncOrchestrator
+
         every { database.tripDao() } returns tripDao
         every { database.gpsPointDao() } returns gpsPointDao
-        
-        repository = TripRepository(database, context)
+
+        repository = TripRepository(database, context, connectionManager, syncOrchestratorLazy)
     }
 
     @AfterEach
