@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
+    <include domain="database" path="captains_log.db" />
+    <include domain="sharedpref" path="." />
     <exclude domain="sharedpref" path="boat_tracking_secure_prefs.xml" />
+    <exclude domain="file" path="temp_photos" />
 </full-backup-content>

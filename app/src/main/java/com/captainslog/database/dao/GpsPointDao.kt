@@ -20,4 +20,7 @@ interface GpsPointDao {
 
     @Query("DELETE FROM gps_points WHERE tripId = :tripId")
     suspend fun deleteGpsPointsForTrip(tripId: String)
+
+    @Query("SELECT * FROM gps_points")
+    suspend fun getAllGpsPointsSync(): List<GpsPointEntity>
 }

@@ -38,4 +38,7 @@ interface TodoItemDao {
 
     @Query("DELETE FROM todo_items")
     suspend fun deleteAllTodoItems()
+
+    @Query("SELECT * FROM todo_items")
+    suspend fun getAllTodoItemsSync(): List<TodoItemEntity>
 }

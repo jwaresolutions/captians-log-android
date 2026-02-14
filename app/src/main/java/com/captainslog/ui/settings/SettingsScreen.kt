@@ -13,6 +13,13 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.captainslog.backup.BackupManager
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -64,10 +71,44 @@ fun SettingsScreen(
     var isSyncing by remember { mutableStateOf(false) }
     var conflictLogs by remember { mutableStateOf("No conflicts logged") }
     var showDisconnectDialog by remember { mutableStateOf(false) }
+    var isExporting by remember { mutableStateOf(false) }
+    var isImporting by remember { mutableStateOf(false) }
+    var showImportConfirmDialog by remember { mutableStateOf(false) }
+    var pendingImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
 
     val conflictLogger = remember { ConflictLogger(context) }
     val securePreferences = remember { SecurePreferences(context) }
     val currentMode by appModeManager.currentMode.collectAsState()
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                isExporting = true
+                try {
+                    val json = BackupManager.exportToJson(database)
+                    context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                        outputStream.write(json.toByteArray())
+                    }
+                    Toast.makeText(context, "Backup exported successfully", Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
+                } finally {
+                    isExporting = false
+                }
+            }
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            pendingImportUri = uri
+            showImportConfirmDialog = true
+        }
+    }
 
     // Load conflict logs
     LaunchedEffect(Unit) {
@@ -198,6 +239,37 @@ fun SettingsScreen(
 
             Divider()
 
+            // Backup & Restore Section
+            SettingsSection(title = "Backup & Restore") {
+                SettingsItem(
+                    icon = Icons.Filled.Cloud,
+                    title = "Export Backup",
+                    subtitle = if (isExporting) "Exporting..." else "Save all data as a JSON file",
+                    onClick = if (isExporting) null else {
+                        {
+                            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                            exportLauncher.launch("captains_log_backup_$timestamp.json")
+                        }
+                    }
+                )
+                SettingsItem(
+                    icon = Icons.Filled.Refresh,
+                    title = "Import Backup",
+                    subtitle = if (isImporting) "Importing..." else "Restore data from a JSON backup file",
+                    onClick = if (isImporting) null else {
+                        { importLauncher.launch(arrayOf("application/json")) }
+                    }
+                )
+                Text(
+                    text = "Note: Photos are not included in backups. Your data is also automatically backed up to Google Drive.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+
+            Divider()
+
             // Server Section
             SettingsSection(title = "Server") {
                 when (currentMode) {
@@ -264,6 +336,56 @@ fun SettingsScreen(
                 )
             }
         }
+    }
+
+    // Import confirmation dialog
+    if (showImportConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showImportConfirmDialog = false
+                pendingImportUri = null
+            },
+            title = { Text("Import Backup") },
+            text = {
+                Text("This will merge the backup data with your existing data. Matching records will be overwritten. Continue?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showImportConfirmDialog = false
+                        val uri = pendingImportUri ?: return@TextButton
+                        pendingImportUri = null
+                        scope.launch {
+                            isImporting = true
+                            try {
+                                val json = context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                                    inputStream.bufferedReader().readText()
+                                } ?: throw Exception("Could not read file")
+                                val stats = BackupManager.importFromJson(database, json)
+                                val total = stats.trips + stats.boats + stats.notes + stats.gpsPoints +
+                                    stats.crewMembers + stats.photos + stats.todoLists + stats.todoItems +
+                                    stats.maintenanceTemplates + stats.maintenanceEvents + stats.markedLocations
+                                Toast.makeText(context, "Imported $total records successfully", Toast.LENGTH_LONG).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Import failed: ${e.message}", Toast.LENGTH_LONG).show()
+                            } finally {
+                                isImporting = false
+                            }
+                        }
+                    }
+                ) {
+                    Text("Import")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showImportConfirmDialog = false
+                    pendingImportUri = null
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     // Disconnect confirmation dialog

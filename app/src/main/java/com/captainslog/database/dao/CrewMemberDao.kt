@@ -23,4 +23,7 @@ interface CrewMemberDao {
 
     @Query("DELETE FROM crew_members WHERE tripId = :tripId")
     suspend fun deleteCrewForTrip(tripId: String)
+
+    @Query("SELECT * FROM crew_members")
+    suspend fun getAllCrewMembersSync(): List<CrewMemberEntity>
 }
