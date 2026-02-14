@@ -47,7 +47,7 @@ fun NauticalSettingsScreen(
     ) {
         // Free Providers
         SettingsSection(title = "Free Providers") {
-            NauticalProviders.free.forEach { provider ->
+            NauticalProviders.free.filter { it.parentId == null }.forEach { provider ->
                 ProviderCard(
                     provider = provider,
                     enabled = settings[provider.id]?.enabled ?: false,
@@ -55,6 +55,19 @@ fun NauticalSettingsScreen(
                     onToggle = { settingsManager.toggleProvider(provider.id) },
                     onApiKeyChange = { settingsManager.setApiKey(provider.id, it) }
                 )
+                // Render child providers indented under parent
+                val parentEnabled = settings[provider.id]?.enabled ?: false
+                NauticalProviders.free.filter { it.parentId == provider.id }.forEach { child ->
+                    ProviderCard(
+                        provider = child,
+                        enabled = settings[child.id]?.enabled ?: false,
+                        apiKey = settings[child.id]?.apiKey ?: "",
+                        onToggle = { settingsManager.toggleProvider(child.id) },
+                        onApiKeyChange = { settingsManager.setApiKey(child.id, it) },
+                        indent = true,
+                        parentEnabled = parentEnabled
+                    )
+                }
             }
         }
 
@@ -62,7 +75,7 @@ fun NauticalSettingsScreen(
 
         // Paid Providers
         SettingsSection(title = "Paid Providers") {
-            NauticalProviders.paid.forEach { provider ->
+            NauticalProviders.paid.filter { it.parentId == null }.forEach { provider ->
                 ProviderCard(
                     provider = provider,
                     enabled = settings[provider.id]?.enabled ?: false,
@@ -154,7 +167,9 @@ private fun ProviderCard(
     enabled: Boolean,
     apiKey: String,
     onToggle: () -> Unit,
-    onApiKeyChange: (String) -> Unit
+    onApiKeyChange: (String) -> Unit,
+    indent: Boolean = false,
+    parentEnabled: Boolean = true
 ) {
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
@@ -162,7 +177,7 @@ private fun ProviderCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+            .padding(start = if (indent) 32.dp else 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
@@ -213,8 +228,9 @@ private fun ProviderCard(
                 }
 
                 Switch(
-                    checked = enabled,
-                    onCheckedChange = { onToggle() }
+                    checked = enabled && parentEnabled,
+                    onCheckedChange = { onToggle() },
+                    enabled = parentEnabled
                 )
 
                 Icon(

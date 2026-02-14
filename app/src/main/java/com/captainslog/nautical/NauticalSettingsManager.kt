@@ -50,7 +50,10 @@ class NauticalSettingsManager @Inject constructor(
     }
 
     fun isEnabled(id: String): Boolean {
-        return _settings.value[id]?.enabled ?: false
+        val selfEnabled = _settings.value[id]?.enabled ?: false
+        if (!selfEnabled) return false
+        val parentId = com.captainslog.nautical.NauticalProviders.getById(id)?.parentId
+        return parentId == null || (_settings.value[parentId]?.enabled ?: false)
     }
 
     fun toggleProvider(id: String) {

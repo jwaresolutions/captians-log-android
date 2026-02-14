@@ -44,9 +44,10 @@ object NauticalProviders {
             type = ProviderType.DATA,
             description = "Real-time and predicted tide and current data from US stations.",
             website = "https://tidesandcurrents.noaa.gov",
-            features = listOf("Official NOAA data", "Real-time observations", "Tide predictions"),
-            warnings = listOf("US stations only", "Rate limited"),
-            requiresApiKey = false
+            features = listOf("Official NOAA data", "Real-time observations", "Tide predictions shown on map markers", "Works on any base map"),
+            warnings = listOf("US stations only", "Rate limited", "Requires NOAA Charts to be enabled"),
+            requiresApiKey = false,
+            parentId = "noaa-charts"
         ),
         NauticalProviderMeta(
             id = "aisstream",

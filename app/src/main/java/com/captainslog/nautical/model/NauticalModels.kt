@@ -11,7 +11,8 @@ data class NauticalProviderMeta(
     val warnings: List<String>,
     val requiresApiKey: Boolean,
     val apiKeySignupUrl: String? = null,
-    val pricingNote: String? = null
+    val pricingNote: String? = null,
+    val parentId: String? = null
 )
 
 enum class ProviderTier { FREE, PAID }

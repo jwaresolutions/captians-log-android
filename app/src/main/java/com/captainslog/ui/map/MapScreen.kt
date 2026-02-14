@@ -442,16 +442,19 @@ private fun updateMapOverlays(
     if (viewModel.isNauticalLayerVisible("noaa-coops")) uiState.tideStations.forEach { station ->
         val predictions = uiState.tidePredictions[station.id]
         val latestPrediction = predictions?.firstOrNull()
+        val tideInfo = if (latestPrediction != null) {
+            "${"%.2f".format(latestPrediction.value)} ft (${latestPrediction.type})"
+        } else null
         val marker = Marker(mapView).apply {
             position = GeoPoint(station.latitude, station.longitude)
-            title = station.name
+            title = if (tideInfo != null) "${station.name} — $tideInfo" else station.name
             snippet = if (latestPrediction != null) {
-                "${latestPrediction.type}: ${"%.2f".format(latestPrediction.value)} ft @ ${latestPrediction.time}"
+                "@ ${latestPrediction.time}"
             } else {
                 "Tide station"
             }
             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-            icon = ContextCompat.getDrawable(mapView.context, android.R.drawable.ic_menu_compass)
+            icon = ContextCompat.getDrawable(mapView.context, android.R.drawable.ic_menu_recent_history)
         }
         mapView.overlayManager.add(marker)
     }
