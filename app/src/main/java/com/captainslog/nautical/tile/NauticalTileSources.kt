@@ -6,8 +6,8 @@ import org.osmdroid.util.MapTileIndex
 object NauticalTileSources {
 
     val openSeaMap = object : OnlineTileSourceBase(
-        "OpenSeaMap", 1, 18, 256, ".png",
-        arrayOf("https://tiles.openseamap.org/seamark/")
+        "OpenSeaMap", 7, 18, 256, ".png",
+        arrayOf("https://t1.openseamap.org/seamark/")
     ) {
         override fun getTileURLString(pMapTileIndex: Long): String {
             val zoom = MapTileIndex.getZoom(pMapTileIndex)
