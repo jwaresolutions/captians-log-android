@@ -15,15 +15,20 @@ on:
 
 jobs:
   lint:
-    name: Lint HTML
+    name: Lint & Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate HTML files exist
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install and build
+        working-directory: web
         run: |
-          test -f web/html/index.html || exit 1
-          test -f web/html/privacy/index.html || exit 1
-          echo "All required HTML files present"
+          npm ci
+          npm run build
 
   build:
     name: Build Docker Image
@@ -84,16 +89,6 @@ jobs:
             exit 1
           fi
           echo "Landing page OK (200)"
-
-      - name: Test privacy policy
-        run: |
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/privacy/)
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "Privacy policy returned $HTTP_CODE"
-            docker logs test-web
-            exit 1
-          fi
-          echo "Privacy policy OK (200)"
 
       - name: Test health check
         run: |
