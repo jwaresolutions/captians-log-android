@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Captain's Log App Features - GPS tracking, nautical charts, photo logs, crew management, maintenance tracking, and more.">
+    <title>Captain's Log - App Features</title>
+    <link rel="stylesheet" href="/shared.css">
+    <style>
+        .back-link {
+            display: inline-block;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            transition: color 0.3s ease;
+            animation: fadeIn 1s ease 0.1s both;
+        }
+
+        .back-link:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            animation: fadeIn 1s ease 0.2s both;
+        }
+
+        .intro {
+            color: #bbb;
+            font-size: 1rem;
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.7;
+            animation: fadeIn 1s ease 0.3s both;
+        }
+
+        .feature-section {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 24px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            border-left: 3px solid rgba(255, 153, 51, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .feature-section:nth-child(1) { animation: fadeIn 0.6s ease 0.4s both; }
+        .feature-section:nth-child(2) { animation: fadeIn 0.6s ease 0.5s both; }
+        .feature-section:nth-child(3) { animation: fadeIn 0.6s ease 0.6s both; }
+        .feature-section:nth-child(4) { animation: fadeIn 0.6s ease 0.7s both; }
+        .feature-section:nth-child(5) { animation: fadeIn 0.6s ease 0.8s both; }
+        .feature-section:nth-child(6) { animation: fadeIn 0.6s ease 0.9s both; }
+        .feature-section:nth-child(7) { animation: fadeIn 0.6s ease 1s both; }
+        .feature-section:nth-child(8) { animation: fadeIn 0.6s ease 1.1s both; }
+        .feature-section:nth-child(9) { animation: fadeIn 0.6s ease 1.2s both; }
+        .feature-section:nth-child(10) { animation: fadeIn 0.6s ease 1.3s both; }
+
+        .feature-section h2 {
+            color: #ff9933;
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+        }
+
+        .feature-section p {
+            color: #999;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            margin-bottom: 8px;
+        }
+
+        .feature-section p:last-child {
+            margin-bottom: 0;
+        }
+
+        .feature-section ul {
+            color: #999;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            padding-left: 20px;
+            margin-top: 8px;
+        }
+
+        .feature-section li {
+            margin-bottom: 6px;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.6rem; }
+            .intro { font-size: 0.95rem; }
+            .feature-section { padding: 18px; }
+            .feature-section h2 { font-size: 1.15rem; }
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 1.4rem; }
+            .feature-section { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="starfield"></canvas>
+
+    <div class="page-content">
+        <div class="container">
+            <a href="/" class="back-link">&larr; Back</a>
+
+            <img class="logo logo-small" src="/captains-log-logo.png" alt="Captain's Log">
+
+            <h1>Captain's Log - App Features</h1>
+            <p class="intro">
+                A comprehensive digital ship's log designed for sailors and boaters.
+                Track your adventures, manage your vessel, and keep detailed records — all from your device.
+            </p>
+
+            <div class="feature-section">
+                <h2>GPS Trip Tracking</h2>
+                <p>Record every nautical mile with precise GPS tracking. Captain's Log captures your route, speed, distance, and trip duration automatically while you're on the water.</p>
+                <p>View comprehensive trip history and statistics. Configurable tracking intervals ensure you capture the detail you need, while smart stop-point detection prevents unnecessary battery drain when you're anchored or docked.</p>
+            </div>
+
+            <div class="feature-section">
+                <h2>Nautical Charts & Maps</h2>
+                <p>Interactive maps with multiple professional chart providers:</p>
+                <ul>
+                    <li><strong>NOAA Nautical Charts</strong> - Official government charts with navigational aids, depth contours, and hazards</li>
+                    <li><strong>GEBCO Bathymetry</strong> - High-resolution ocean depth data for understanding underwater topography</li>
+                    <li><strong>OpenSeaMap Overlays</strong> - Community-maintained marine features and points of interest</li>
+                </ul>
+                <p>View real-time marine data including tide stations, NOAA weather alerts, marine conditions, wave height and period, and vessel traffic (AIS). Save and categorize custom locations like marinas, fishing spots, anchorages, and hazards for quick reference on future trips.</p>
+            </div>
+
+            <div class="feature-section">
+                <h2>Photo Logs</h2>
+                <p>Capture and attach photos to your trips, building a visual record of your boating adventures. Photos are automatically linked to trip data with location and timestamp information.</p>
+                <p>Smart photo management with automatic WiFi sync and intelligent 7-day local retention keeps your device storage optimized while preserving your memories in the cloud.</p>
+            </div>
+
+            <div class="feature-section">
+                <h2>Crew Management</h2>
+                <p>Share trips with crew members via QR codes for instant trip access. Track crew members across multiple voyages and maintain a complete crew history.</p>
+                <p>Captain and crew role differentiation ensures proper access control and accountability for your vessel's operations.</p>
+            </div>
+
+            <div class="feature-section">
+                <h2>Maintenance Tracking</h2>
+                <p>Never miss critical vessel maintenance again. Create custom maintenance templates and schedules for recurring tasks like oil changes, sail inspections, and hull cleaning.</p>
+                <p>Track overdue, upcoming, and completed maintenance tasks at a glance. Keep a complete service history for your vessel, essential for resale value and warranty claims.</p>
+            </div>
+
+            <div class="feature-section">
+                <h2>Sensor Integration</h2>
+                <p>Connect Bluetooth sensors (Arduino-compatible) for real-time environmental data monitoring. Track temperature, barometric pressure, and humidity while underway.</p>
+                <p>Monitor changing conditions to make informed decisions about weather patterns and safe navigation.</p>
+            </div>
+
+            <div class="feature-section">
+                <h2>Captain's License Tracking</h2>
+                <p>Track sea time toward professional licensing requirements. View total days logged, progress indicators toward certification milestones, and estimated completion dates.</p>
+                <p>Essential for aspiring professional mariners building documented experience.</p>
+            </div>
+
+            <div class="feature-section">
+                <h2>Notes & Todos</h2>
+                <p>Organize notes by type: personal observations, technical specifications, and safety procedures. Manage boat-specific task lists to keep track of projects and improvements.</p>
+                <p>Powerful search and filtering helps you find critical information quickly when you need it on the water.</p>
+            </div>
+
+            <div class="feature-section">
+                <h2>Multi-Boat Support</h2>
+                <p>Manage multiple vessels from a single app. Each boat maintains separate trip logs, maintenance schedules, and configurations.</p>
+                <p>Share boat configurations via QR codes to quickly set up the app on crew devices. Set your active boat for trip recording with a single tap.</p>
+            </div>
+
+            <div class="feature-section">
+                <h2>Offline-First with Cloud Sync</h2>
+                <p>Captain's Log works fully offline with local SQLite storage — no internet connection required on the water. Your data stays on your device until you choose to sync.</p>
+                <p>Automatic synchronization when connected to WiFi or cellular data. Intelligent conflict detection and resolution ensures data integrity across devices. Secure JWT authentication and certificate pinning protect your data during sync.</p>
+            </div>
+        </div>
+
+        <footer>
+            <a href="/">&larr; Back to Captain's Log</a>
+            <p>&copy; 2026 JWare Solutions</p>
+        </footer>
+    </div>
+
+    <script src="/starfield.js"></script>
+</body>
+</html>
