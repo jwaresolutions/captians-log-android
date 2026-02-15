@@ -43,7 +43,10 @@ class QrTripImporter(
     )
 
     private val gson = Gson()
-    private val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+    private val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
+    }
+    private val isoFormatNoMs = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
         timeZone = TimeZone.getTimeZone("UTC")
     }
 
@@ -129,16 +132,16 @@ class QrTripImporter(
 
         if (entitiesToImport.isNotEmpty()) {
             tripDao.insertTrips(entitiesToImport)
-        }
 
-        // Record QR import for deduplication
-        importedQrDao.insert(
-            ImportedQrEntity(
-                qrId = qrId,
-                type = "trip",
-                importedAt = Date()
+            // Only record QR import for deduplication if trips were actually saved
+            importedQrDao.insert(
+                ImportedQrEntity(
+                    qrId = qrId,
+                    type = "trip",
+                    importedAt = Date()
+                )
             )
-        )
+        }
 
         return entitiesToImport.size
     }
@@ -173,7 +176,11 @@ class QrTripImporter(
         return try {
             isoFormat.parse(dateStr)
         } catch (e: Exception) {
-            null
+            try {
+                isoFormatNoMs.parse(dateStr)
+            } catch (e2: Exception) {
+                null
+            }
         }
     }
 }
