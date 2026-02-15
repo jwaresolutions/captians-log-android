@@ -113,6 +113,23 @@
       var formDirty = false;
 
       // ── Populate timezone selects ──────────────────────────────────────
+      function getTimezoneOffset(tz) {
+        try {
+          var now = new Date();
+          var formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: tz,
+            timeZoneName: 'shortOffset'
+          });
+          var parts = formatter.formatToParts(now);
+          for (var i = 0; i < parts.length; i++) {
+            if (parts[i].type === 'timeZoneName') {
+              return parts[i].value; // e.g. "GMT-5", "GMT+9"
+            }
+          }
+        } catch (e) {}
+        return '';
+      }
+
       function buildTimezoneOptions() {
         var html = '';
         for (var g = 0; g < TIMEZONES.length; g++) {
@@ -120,7 +137,9 @@
           html += '<optgroup label="' + grp.group + '">';
           for (var z = 0; z < grp.zones.length; z++) {
             var tz = grp.zones[z];
+            var offset = getTimezoneOffset(tz);
             var label = tz.replace(/_/g, ' ').replace(/\//g, ' / ');
+            if (offset) label += ' (' + offset + ')';
             var sel = tz === userTimezone ? ' selected' : '';
             html += '<option value="' + tz + '"' + sel + '>' + label + '</option>';
           }
@@ -158,16 +177,19 @@
               '</div>' +
               '<div class="form-group">' +
                 '<label>Start Time *</label>' +
-                '<input type="time" name="startTime" required>' +
+                '<input type="time" name="startTime" value="00:00" required>' +
               '</div>' +
               '<div class="form-group">' +
                 '<label>Start Timezone</label>' +
                 '<select name="startTz">' + tzOptionsHtml + '</select>' +
               '</div>' +
             '</div>' +
-            '<div class="form-group">' +
+            '<div class="form-group port-group">' +
               '<label>Departure Port *</label>' +
-              '<input type="text" name="departurePort" placeholder="e.g. Miami, FL">' +
+              '<div class="port-input-row">' +
+                '<input type="text" name="departurePort" placeholder="e.g. Miami, FL">' +
+                '<button type="button" class="btn-copy-port" data-copy-from="arrivalPort" data-copy-to="departurePort" title="Copy from Arrival Port">&darr;</button>' +
+              '</div>' +
             '</div>' +
 
             '<div class="form-section-label">Arrival</div>' +
@@ -178,16 +200,19 @@
               '</div>' +
               '<div class="form-group">' +
                 '<label>End Time *</label>' +
-                '<input type="time" name="endTime" required>' +
+                '<input type="time" name="endTime" value="23:59" required>' +
               '</div>' +
               '<div class="form-group">' +
                 '<label>End Timezone</label>' +
                 '<select name="endTz">' + tzOptionsHtml + '</select>' +
               '</div>' +
             '</div>' +
-            '<div class="form-group">' +
+            '<div class="form-group port-group">' +
               '<label>Arrival Port *</label>' +
-              '<input type="text" name="arrivalPort" placeholder="e.g. Nassau, Bahamas">' +
+              '<div class="port-input-row">' +
+                '<input type="text" name="arrivalPort" placeholder="e.g. Nassau, Bahamas">' +
+                '<button type="button" class="btn-copy-port" data-copy-from="departurePort" data-copy-to="arrivalPort" title="Copy from Departure Port">&uarr;</button>' +
+              '</div>' +
             '</div>' +
 
             '<div class="form-section-label">Details</div>' +
@@ -223,7 +248,7 @@
               '</div>' +
               '<div class="form-group">' +
                 '<label>Master Name</label>' +
-                '<input type="text" name="masterName" placeholder="Name of vessel master">' +
+                '<input type="text" name="masterName" placeholder="Name of vessel master" disabled>' +
               '</div>' +
             '</div>' +
           '</div>';
@@ -249,6 +274,34 @@
 
         entriesContainer.appendChild(card);
         trackDirty(card);
+
+        // Port copy buttons
+        var copyBtns = card.querySelectorAll('.btn-copy-port');
+        for (var c = 0; c < copyBtns.length; c++) {
+          copyBtns[c].addEventListener('click', function() {
+            var fromField = this.closest('.entry-card').querySelector('[name="' + this.getAttribute('data-copy-from') + '"]');
+            var toField = this.closest('.entry-card').querySelector('[name="' + this.getAttribute('data-copy-to') + '"]');
+            if (fromField && toField && fromField.value.trim()) {
+              toField.value = fromField.value;
+              formDirty = true;
+            }
+          });
+        }
+
+        // Crew role → master name toggle
+        var crewRoleSelect = card.querySelector('[name="crewRole"]');
+        var masterNameInput = card.querySelector('[name="masterName"]');
+        crewRoleSelect.addEventListener('change', function() {
+          var role = this.value;
+          if (role && role !== 'Master') {
+            masterNameInput.disabled = false;
+            masterNameInput.placeholder = 'Name of vessel master';
+          } else {
+            masterNameInput.disabled = true;
+            masterNameInput.value = '';
+            masterNameInput.placeholder = role === 'Master' ? 'You are the master' : 'Select a crew role first';
+          }
+        });
 
         // Remove button handler
         var removeBtn = card.querySelector('.remove-trip-btn');

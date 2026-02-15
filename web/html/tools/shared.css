@@ -331,6 +331,34 @@ select option {
     border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+/* Port copy buttons */
+.port-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.port-input-row input {
+    flex: 1;
+}
+
+.btn-copy-port {
+    background: rgba(255, 153, 51, 0.15);
+    border: 1px solid rgba(255, 153, 51, 0.4);
+    color: #ff9933;
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-copy-port:hover {
+    background: rgba(255, 153, 51, 0.25);
+    border-color: rgba(255, 153, 51, 0.7);
+}
+
 /* Back link */
 .back-link {
     margin-bottom: 1.5rem;
