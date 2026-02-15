@@ -12,8 +12,8 @@
         }
 
         .banner {
-            background: rgba(255, 153, 51, 0.1);
-            border: 1px solid rgba(255, 153, 51, 0.3);
+            background: #1a1200;
+            border: 1px solid #cc7a29;
             border-radius: 8px;
             padding: 14px 20px;
             margin-bottom: 2rem;
@@ -21,6 +21,11 @@
             text-align: center;
             font-size: 0.95rem;
             color: #ccc;
+        }
+
+        body.starfield-view .banner {
+            background: rgba(255, 153, 51, 0.1);
+            border-color: rgba(255, 153, 51, 0.3);
         }
 
         h1 {
@@ -51,18 +56,27 @@
         .tool-card {
             display: block;
             padding: 28px 24px;
-            background: rgba(255, 255, 255, 0.05);
+            background: #111;
             border-radius: 8px;
-            border-left: 3px solid rgba(255, 153, 51, 0.7);
-            backdrop-filter: blur(4px);
+            border-left: 3px solid #cc7a29;
             text-decoration: none;
             transition: all 0.3s ease;
         }
 
         .tool-card:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: #1a1a1a;
             border-left-color: #ff9933;
             transform: translateY(-2px);
+        }
+
+        body.starfield-view .tool-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-left-color: rgba(255, 153, 51, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        body.starfield-view .tool-card:hover {
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .tool-card h2 {
@@ -136,5 +150,6 @@
     </div>
 
     <script src="/starfield.js"></script>
+    <script src="/view-toggle.js"></script>
 </body>
 </html>

@@ -28,11 +28,16 @@
 
         .feature-section {
             width: 100%;
-            background: rgba(255, 255, 255, 0.05);
+            background: #111;
             padding: 24px;
             margin-bottom: 16px;
             border-radius: 8px;
-            border-left: 3px solid rgba(255, 153, 51, 0.7);
+            border-left: 3px solid #cc7a29;
+        }
+
+        body.starfield-view .feature-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-left-color: rgba(255, 153, 51, 0.7);
             backdrop-filter: blur(4px);
         }
 
@@ -175,5 +180,6 @@
     </div>
 
     <script src="/starfield.js"></script>
+    <script src="/view-toggle.js"></script>
 </body>
 </html>

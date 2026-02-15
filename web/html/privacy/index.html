@@ -24,13 +24,18 @@
 
         .section {
             width: 100%;
-            background: rgba(255, 255, 255, 0.05);
+            background: #111;
             padding: 20px 24px;
             margin-bottom: 12px;
             border-radius: 8px;
-            border-left: 3px solid rgba(255, 153, 51, 0.7);
-            backdrop-filter: blur(4px);
+            border-left: 3px solid #cc7a29;
             animation: fadeIn 0.6s ease both;
+        }
+
+        body.starfield-view .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-left-color: rgba(255, 153, 51, 0.7);
+            backdrop-filter: blur(4px);
         }
 
         .section h2 {
@@ -74,6 +79,11 @@
         }
 
         .contact {
+            border-left-color: #cc7a29;
+            background: #1a1200;
+        }
+
+        body.starfield-view .contact {
             border-left-color: rgba(255, 153, 51, 0.4);
             background: rgba(255, 153, 51, 0.08);
         }
@@ -191,5 +201,6 @@
     </div>
 
     <script src="/starfield.js"></script>
+    <script src="/view-toggle.js"></script>
 </body>
 </html>

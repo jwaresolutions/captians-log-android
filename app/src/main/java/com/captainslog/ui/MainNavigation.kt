@@ -291,11 +291,12 @@ fun MainNavigation(
                         val tripImporter = remember {
                             QrTripImporter(viewModel.database.tripDao(), viewModel.database.importedQrDao())
                         }
-                        val trips = remember(importData) {
-                            importData?.let { tripImporter.parseTripData(it) } ?: emptyList()
+                        val parseResult = remember(importData) {
+                            importData?.let { tripImporter.parseTripData(it) }
                         }
                         TripImportReviewScreen(
-                            tripData = trips,
+                            tripData = parseResult?.trips ?: emptyList(),
+                            validationErrors = parseResult?.errors ?: emptyList(),
                             qrId = importQrId!!,
                             generatedAt = importGeneratedAt!!,
                             onBack = { qrImportScreen = QrImportScreen.Scanner },

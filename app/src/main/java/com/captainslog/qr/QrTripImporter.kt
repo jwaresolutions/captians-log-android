@@ -47,18 +47,37 @@ class QrTripImporter(
         timeZone = TimeZone.getTimeZone("UTC")
     }
 
+    data class ParseResult(
+        val trips: List<TripImportData>,
+        val errors: List<String>
+    )
+
     /**
      * Parse a JsonElement (expected JSON array) into a list of TripImportData.
+     * Validates that each trip's arrival time is not before its departure time.
      *
      * @param data JsonElement from QrProtocol decode (should be a JsonArray)
-     * @return List of parsed trip data objects
+     * @return ParseResult with valid trips and any validation errors
      * @throws IllegalArgumentException if data is not a JSON array
      */
-    fun parseTripData(data: JsonElement): List<TripImportData> {
+    fun parseTripData(data: JsonElement): ParseResult {
         require(data.isJsonArray) { "Expected JSON array of trips" }
-        return data.asJsonArray.map { element ->
-            gson.fromJson(element, TripImportData::class.java)
+        val trips = mutableListOf<TripImportData>()
+        val errors = mutableListOf<String>()
+
+        data.asJsonArray.forEachIndexed { index, element ->
+            val trip = gson.fromJson(element, TripImportData::class.java)
+            val startDate = parseGmtDate(trip.startDateGmt)
+            val endDate = parseGmtDate(trip.endDateGmt)
+
+            if (startDate != null && endDate != null && endDate.before(startDate)) {
+                errors.add("Trip ${index + 1}: Arrival time is before departure time")
+            } else {
+                trips.add(trip)
+            }
         }
+
+        return ParseResult(trips, errors)
     }
 
     /**

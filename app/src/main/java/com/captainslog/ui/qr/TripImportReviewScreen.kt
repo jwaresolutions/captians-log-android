@@ -42,6 +42,7 @@ import java.util.TimeZone
 @Composable
 fun TripImportReviewScreen(
     tripData: List<QrTripImporter.TripImportData>,
+    validationErrors: List<String> = emptyList(),
     qrId: String,
     generatedAt: String,
     onBack: () -> Unit,
@@ -182,6 +183,45 @@ fun TripImportReviewScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    // Validation errors (e.g., arrival before departure)
+                    if (validationErrors.isNotEmpty()) {
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer
+                                )
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Filled.Warning,
+                                            contentDescription = "Warning",
+                                            tint = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "${validationErrors.size} trip${if (validationErrors.size != 1) "s" else ""} skipped due to errors:",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    validationErrors.forEach { error ->
+                                        Text(
+                                            text = error,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onErrorContainer
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
                     }
 
                     // Boat selector

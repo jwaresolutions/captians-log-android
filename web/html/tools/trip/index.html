@@ -70,6 +70,7 @@
     </div>
 
     <script src="/starfield.js"></script>
+    <script src="/view-toggle.js"></script>
     <script src="/tools/qr-protocol.js"></script>
     <script src="/tools/shared.js"></script>
     <script>
@@ -279,20 +280,32 @@
         var departureInput = card.querySelector('[name="departurePort"]');
         var arrivalInput = card.querySelector('[name="arrivalPort"]');
 
+        var startTzSelect = card.querySelector('[name="startTz"]');
+        var endTzSelect = card.querySelector('[name="endTz"]');
+
         samePortCheckbox.addEventListener('change', function() {
           if (this.checked) {
             arrivalInput.value = departureInput.value;
             arrivalInput.disabled = true;
+            endTzSelect.value = startTzSelect.value;
+            endTzSelect.disabled = true;
             formDirty = true;
           } else {
             arrivalInput.disabled = false;
+            endTzSelect.disabled = false;
           }
         });
 
-        // Keep arrival in sync when departure changes and checkbox is checked
+        // Keep arrival port and timezone in sync when departure changes and checkbox is checked
         departureInput.addEventListener('input', function() {
           if (samePortCheckbox.checked) {
             arrivalInput.value = departureInput.value;
+          }
+        });
+
+        startTzSelect.addEventListener('change', function() {
+          if (samePortCheckbox.checked) {
+            endTzSelect.value = startTzSelect.value;
           }
         });
 

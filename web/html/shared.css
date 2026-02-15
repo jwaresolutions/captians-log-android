@@ -100,6 +100,44 @@ footer a:hover {
     color: rgba(255, 255, 255, 0.7);
 }
 
+/* View toggle button */
+.view-toggle {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    z-index: 1000;
+    background: #222;
+    border: 1px solid #555;
+    border-radius: 8px;
+    color: #ccc;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.view-toggle:hover {
+    background: #333;
+    border-color: #888;
+    color: #fff;
+}
+
+/* Hide starfield canvas by default (solid view) */
+canvas#starfield {
+    display: none;
+}
+
+/* Starfield view - show canvas and restore transparency */
+body.starfield-view canvas#starfield {
+    display: block;
+}
+
+body.starfield-view .view-toggle {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
 @media (max-width: 768px) {
     .logo-large { width: 250px; }
     .logo-small { width: 150px; }

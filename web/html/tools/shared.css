@@ -10,8 +10,8 @@
 
 /* Banners */
 .banner {
-    background: rgba(255, 153, 51, 0.1);
-    border: 1px solid rgba(255, 153, 51, 0.3);
+    background: #1a1200;
+    border: 1px solid #cc7a29;
     border-radius: 8px;
     padding: 14px 20px;
     margin-bottom: 1rem;
@@ -23,15 +23,30 @@
 }
 
 .banner.banner-info {
-    background: rgba(100, 160, 255, 0.08);
-    border-color: rgba(100, 160, 255, 0.3);
+    background: #0a1020;
+    border-color: #4a70b0;
     color: #aac8ee;
 }
 
 .banner.banner-warning {
+    background: #1a1500;
+    border-color: #b09030;
+    color: #ddc870;
+}
+
+body.starfield-view .banner {
+    background: rgba(255, 153, 51, 0.1);
+    border-color: rgba(255, 153, 51, 0.3);
+}
+
+body.starfield-view .banner.banner-info {
+    background: rgba(100, 160, 255, 0.08);
+    border-color: rgba(100, 160, 255, 0.3);
+}
+
+body.starfield-view .banner.banner-warning {
     background: rgba(255, 200, 50, 0.08);
     border-color: rgba(255, 200, 50, 0.3);
-    color: #ddc870;
 }
 
 /* Page header */
@@ -60,7 +75,7 @@
 .form-group label {
     display: block;
     font-size: 0.85rem;
-    color: #bbb;
+    color: #ddd;
     margin-bottom: 4px;
     font-weight: 500;
 }
@@ -89,13 +104,27 @@ select,
 textarea {
     width: 100%;
     padding: 10px 12px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: #111;
+    border: 1px solid #555;
     border-radius: 6px;
-    color: #e0e0e0;
+    color: #fff;
     font-size: 0.95rem;
     font-family: inherit;
     transition: border-color 0.2s ease;
+}
+
+body.starfield-view input[type="text"],
+body.starfield-view input[type="date"],
+body.starfield-view input[type="time"],
+body.starfield-view input[type="number"],
+body.starfield-view input[type="email"],
+body.starfield-view input[type="tel"],
+body.starfield-view input[type="datetime-local"],
+body.starfield-view select,
+body.starfield-view textarea {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #e0e0e0;
 }
 
 /* Dark theme for date/time pickers */
@@ -109,20 +138,33 @@ input[type="datetime-local"] {
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-    filter: invert(1);
+    filter: invert(0.8) brightness(1.5);
     cursor: pointer;
+    opacity: 1;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
     outline: none;
+    border-color: #ff9933;
+    box-shadow: 0 0 0 2px rgba(255, 153, 51, 0.4);
+}
+
+body.starfield-view input:focus,
+body.starfield-view select:focus,
+body.starfield-view textarea:focus {
     border-color: rgba(255, 153, 51, 0.6);
     box-shadow: 0 0 0 2px rgba(255, 153, 51, 0.2);
 }
 
 input::placeholder,
 textarea::placeholder {
+    color: #777;
+}
+
+body.starfield-view input::placeholder,
+body.starfield-view textarea::placeholder {
     color: rgba(255, 255, 255, 0.25);
 }
 
@@ -130,9 +172,18 @@ textarea::placeholder {
 input:disabled,
 select:disabled,
 textarea:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
+    background: #0a0a0a;
+    border-color: #444;
+}
+
+body.starfield-view input:disabled,
+body.starfield-view select:disabled,
+body.starfield-view textarea:disabled {
+    opacity: 0.5;
     background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 /* Autofill override - prevent white background on autofill */
@@ -159,8 +210,8 @@ select {
 }
 
 select option {
-    background: #1a1a1a;
-    color: #e0e0e0;
+    background: #111;
+    color: #fff;
 }
 
 /* Buttons */
@@ -178,36 +229,66 @@ select option {
 }
 
 .btn-primary {
-    background: rgba(255, 153, 51, 0.2);
+    background: #331a00;
     color: #ff9933;
-    border: 1px solid rgba(255, 153, 51, 0.4);
+    border: 1px solid #cc7a29;
 }
 
 .btn-primary:hover {
-    background: rgba(255, 153, 51, 0.3);
-    border-color: rgba(255, 153, 51, 0.7);
+    background: #4d2600;
+    border-color: #ff9933;
 }
 
 .btn-secondary {
-    background: rgba(255, 255, 255, 0.06);
+    background: #222;
     color: #ccc;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid #666;
 }
 
 .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: #333;
+    border-color: #888;
 }
 
 .btn-danger {
-    background: rgba(220, 60, 60, 0.15);
+    background: #2a0a0a;
     color: #e07070;
-    border: 1px solid rgba(220, 60, 60, 0.3);
+    border: 1px solid #aa4444;
     padding: 6px 14px;
     font-size: 0.85rem;
 }
 
 .btn-danger:hover {
+    background: #3a1010;
+    border-color: #e07070;
+}
+
+body.starfield-view .btn-primary {
+    background: rgba(255, 153, 51, 0.2);
+    border-color: rgba(255, 153, 51, 0.4);
+}
+
+body.starfield-view .btn-primary:hover {
+    background: rgba(255, 153, 51, 0.3);
+    border-color: rgba(255, 153, 51, 0.7);
+}
+
+body.starfield-view .btn-secondary {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+body.starfield-view .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+body.starfield-view .btn-danger {
+    background: rgba(220, 60, 60, 0.15);
+    border-color: rgba(220, 60, 60, 0.3);
+}
+
+body.starfield-view .btn-danger:hover {
     background: rgba(220, 60, 60, 0.25);
     border-color: rgba(220, 60, 60, 0.5);
 }
@@ -226,12 +307,17 @@ select option {
 
 /* Trip entry cards */
 .entry-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #111;
+    border: 1px solid #555;
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 1.25rem;
     position: relative;
+}
+
+body.starfield-view .entry-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .entry-card-header {
@@ -240,7 +326,11 @@ select option {
     align-items: center;
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid #444;
+}
+
+body.starfield-view .entry-card-header {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
 .entry-card-header h3 {
@@ -252,7 +342,7 @@ select option {
 /* Section dividers within cards */
 .form-section-label {
     font-size: 0.8rem;
-    color: rgba(255, 153, 51, 0.7);
+    color: #ff9933;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-top: 1rem;
@@ -260,14 +350,23 @@ select option {
     font-weight: 600;
 }
 
+body.starfield-view .form-section-label {
+    color: rgba(255, 153, 51, 0.7);
+}
+
 /* QR code display area */
 .qr-output {
     text-align: center;
     margin-top: 2rem;
     padding: 24px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #111;
+    border: 1px solid #555;
     border-radius: 10px;
+}
+
+body.starfield-view .qr-output {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .qr-output h3 {
@@ -293,8 +392,8 @@ select option {
 }
 
 .qr-nav button {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: #222;
+    border: 1px solid #666;
     color: #ccc;
     padding: 6px 16px;
     border-radius: 6px;
@@ -305,6 +404,16 @@ select option {
 }
 
 .qr-nav button:hover:not(:disabled) {
+    background: #333;
+    border-color: #888;
+}
+
+body.starfield-view .qr-nav button {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+body.starfield-view .qr-nav button:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.3);
 }
@@ -321,6 +430,10 @@ select option {
 
 /* Validation errors */
 .field-error {
+    border-color: #cc3333 !important;
+}
+
+body.starfield-view .field-error {
     border-color: rgba(220, 60, 60, 0.6) !important;
 }
 
@@ -331,8 +444,8 @@ select option {
 }
 
 .validation-summary {
-    background: rgba(220, 60, 60, 0.1);
-    border: 1px solid rgba(220, 60, 60, 0.3);
+    background: #2a0a0a;
+    border: 1px solid #aa4444;
     border-radius: 8px;
     padding: 14px 20px;
     margin-bottom: 1rem;
@@ -340,31 +453,50 @@ select option {
     font-size: 0.9rem;
 }
 
+body.starfield-view .validation-summary {
+    background: rgba(220, 60, 60, 0.1);
+    border-color: rgba(220, 60, 60, 0.3);
+}
+
 /* Page-level controls */
 .page-control {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #111;
+    border: 1px solid #555;
     border-radius: 10px;
     padding: 16px 20px;
     margin-bottom: 1.5rem;
 }
 
+body.starfield-view .page-control {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
 .page-control label {
     display: block;
     font-size: 0.85rem;
-    color: #bbb;
+    color: #ddd;
     margin-bottom: 6px;
     font-weight: 500;
+}
+
+body.starfield-view .page-control label {
+    color: #bbb;
 }
 
 /* Footer info */
 .protocol-footer {
     text-align: center;
-    color: rgba(255, 255, 255, 0.2);
+    color: #777;
     font-size: 0.8rem;
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid #333;
+}
+
+body.starfield-view .protocol-footer {
+    color: rgba(255, 255, 255, 0.2);
+    border-top-color: rgba(255, 255, 255, 0.05);
 }
 
 /* Checkbox styles */
@@ -378,8 +510,12 @@ select option {
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    color: #bbb;
+    color: #ddd;
     font-size: 0.9rem;
+}
+
+body.starfield-view .checkbox-label {
+    color: #bbb;
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -395,14 +531,26 @@ select option {
 }
 
 .back-link a {
-    color: rgba(255, 255, 255, 0.5);
+    color: #aaa;
     text-decoration: none;
     font-size: 0.9rem;
     transition: color 0.3s ease;
 }
 
 .back-link a:hover {
+    color: #fff;
+}
+
+body.starfield-view .back-link a {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+body.starfield-view .back-link a:hover {
     color: rgba(255, 255, 255, 0.8);
+}
+
+body.starfield-view .form-group label {
+    color: #bbb;
 }
 
 /* Print styles */
@@ -420,7 +568,8 @@ select option {
     .back-link,
     .protocol-footer,
     footer,
-    .qr-nav {
+    .qr-nav,
+    .view-toggle {
         display: none !important;
     }
     .qr-output {

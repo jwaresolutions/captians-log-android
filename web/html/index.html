@@ -50,9 +50,14 @@
 
         .feature {
             padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
+            background: #111;
             border-radius: 8px;
-            border-left: 3px solid rgba(255, 153, 51, 0.7);
+            border-left: 3px solid #cc7a29;
+        }
+
+        body.starfield-view .feature {
+            background: rgba(255, 255, 255, 0.05);
+            border-left-color: rgba(255, 153, 51, 0.7);
             backdrop-filter: blur(4px);
         }
 
@@ -81,17 +86,27 @@
             padding: 14px 32px;
             min-width: 260px;
             text-align: center;
-            background: rgba(255, 153, 51, 0.15);
+            background: #331a00;
             color: #ff9933;
             text-decoration: none;
             border-radius: 8px;
-            border: 1px solid rgba(255, 153, 51, 0.4);
+            border: 1px solid #cc7a29;
             font-weight: 600;
             font-size: 1.05rem;
             transition: all 0.3s ease;
         }
 
         .play-badge:hover {
+            background: #4d2600;
+            border-color: #ff9933;
+        }
+
+        body.starfield-view .play-badge {
+            background: rgba(255, 153, 51, 0.15);
+            border-color: rgba(255, 153, 51, 0.4);
+        }
+
+        body.starfield-view .play-badge:hover {
             background: rgba(255, 153, 51, 0.25);
             border-color: rgba(255, 153, 51, 0.7);
         }
@@ -175,5 +190,6 @@
     </div>
 
     <script src="/starfield.js"></script>
+    <script src="/view-toggle.js"></script>
 </body>
 </html>
