@@ -28,7 +28,7 @@ import java.util.*
 fun TripListScreen(
     trips: List<TripEntity>,
     onTripClick: (String) -> Unit,
-    onStartNewTrip: (String, String, String) -> Unit, // Changed to take trip parameters
+    onStartNewTrip: (String, String, String, String?, String?, Double?) -> Unit,
     boats: List<com.captainslog.database.entities.BoatEntity> = emptyList(),
     activeBoat: com.captainslog.database.entities.BoatEntity? = null,
     isTracking: Boolean = false,
@@ -149,8 +149,8 @@ fun TripListScreen(
     if (showStartDialog) {
         StartTripDialog(
             onDismiss = { showStartDialog = false },
-            onConfirm = { boatId, waterType, role ->
-                onStartNewTrip(boatId, waterType, role)
+            onConfirm = { boatId, waterType, role, bodyOfWater, boundaryClassification, distanceOffshore ->
+                onStartNewTrip(boatId, waterType, role, bodyOfWater, boundaryClassification, distanceOffshore)
                 showStartDialog = false
             },
             boats = boats,

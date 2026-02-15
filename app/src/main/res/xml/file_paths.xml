@@ -6,6 +6,8 @@
     <files-path name="photos" path="photos/" />
     <!-- Cache directory for exports -->
     <cache-path name="exports" path="exports/" />
+    <!-- Cache directory for CG-719S forms -->
+    <cache-path name="cg719s_forms" path="cg719s/" />
     <!-- Shared files directory -->
     <files-path name="shared" path="shared/" />
 </paths>

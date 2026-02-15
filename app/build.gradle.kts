@@ -176,6 +176,9 @@ dependencies {
     // Gson
     implementation("com.google.code.gson:gson:2.10.1")
 
+    // PDF form filling (Apache 2.0 license)
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+
     // Hilt Dependency Injection
     val hiltVersion = "2.51.1"
     implementation("com.google.dagger:hilt-android:$hiltVersion")

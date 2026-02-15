@@ -32,6 +32,7 @@ import com.captainslog.database.entities.TripEntity
 import com.captainslog.database.entities.OfflineChangeEntity
 import com.captainslog.database.migrations.MIGRATION_9_10
 import com.captainslog.database.migrations.MIGRATION_10_11
+import com.captainslog.database.migrations.MIGRATION_11_12
 
 @Database(
     entities = [
@@ -48,7 +49,7 @@ import com.captainslog.database.migrations.MIGRATION_10_11
         OfflineChangeEntity::class,
         CrewMemberEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class)

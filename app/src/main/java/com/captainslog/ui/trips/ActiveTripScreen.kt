@@ -1,6 +1,9 @@
 package com.captainslog.ui.trips
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
@@ -8,8 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.captainslog.database.entities.BoatEntity
 import com.captainslog.database.entities.TripEntity
@@ -25,7 +27,7 @@ import java.util.*
 fun ActiveTripScreen(
     isTracking: Boolean,
     currentTrip: TripEntity?,
-    onStartTrip: (String, String, String) -> Unit,
+    onStartTrip: (String, String, String, String?, String?, Double?) -> Unit,
     onStopTrip: () -> Unit,
     boats: List<BoatEntity> = emptyList(),
     activeBoat: BoatEntity? = null,
@@ -119,8 +121,8 @@ fun ActiveTripScreen(
     if (showStartDialog) {
         StartTripDialog(
             onDismiss = { showStartDialog = false },
-            onConfirm = { boatId, waterType, role ->
-                onStartTrip(boatId, waterType, role)
+            onConfirm = { boatId, waterType, role, bodyOfWater, boundaryClassification, distanceOffshore ->
+                onStartTrip(boatId, waterType, role, bodyOfWater, boundaryClassification, distanceOffshore)
                 showStartDialog = false
             },
             boats = boats,
@@ -236,27 +238,38 @@ fun InfoRow(
 @Composable
 fun StartTripDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String, String, String) -> Unit,
+    onConfirm: (String, String, String, String?, String?, Double?) -> Unit,
     boats: List<BoatEntity> = emptyList(),
     activeBoat: BoatEntity? = null
 ) {
     // Filter to only enabled boats
     val enabledBoats = boats.filter { it.enabled }
-    
+
     // Initialize with active boat if available and enabled, otherwise first enabled boat, otherwise empty
-    var selectedBoat by remember { 
+    var selectedBoat by remember {
         mutableStateOf(
             if (activeBoat?.enabled == true) activeBoat else enabledBoats.firstOrNull()
-        ) 
+        )
     }
     var waterType by remember { mutableStateOf("inland") }
-    var role by remember { mutableStateOf("captain") }
+    var role by remember { mutableStateOf("master") }
+    var bodyOfWater by remember { mutableStateOf("") }
+    var boundaryClassification by remember { mutableStateOf("") }
+    var distanceOffshore by remember { mutableStateOf("") }
     var expandedBoat by remember { mutableStateOf(false) }
     var expandedWaterType by remember { mutableStateOf(false) }
     var expandedRole by remember { mutableStateOf(false) }
-    
+    var expandedBoundary by remember { mutableStateOf(false) }
+    var distanceOffshoreError by remember { mutableStateOf(false) }
+
     val waterTypes = listOf("inland", "coastal", "offshore")
-    val roles = listOf("captain", "crew", "observer")
+    val roles = listOf("master", "mate", "operator", "deckhand", "engineer", "other")
+    val boundaryClassifications = listOf(
+        "" to "None",
+        "great_lakes" to "Great Lakes",
+        "shoreward" to "Shoreward of Boundary",
+        "seaward" to "Seaward of Boundary"
+    )
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -381,15 +394,97 @@ fun StartTripDialog(
                             }
                         }
                     }
+
+                    // Body of Water text input
+                    OutlinedTextField(
+                        value = bodyOfWater,
+                        onValueChange = { bodyOfWater = it },
+                        label = { Text("Body of Water") },
+                        placeholder = { Text("e.g., Chesapeake Bay") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Boundary Classification dropdown
+                    ExposedDropdownMenuBox(
+                        expanded = expandedBoundary,
+                        onExpandedChange = { expandedBoundary = it }
+                    ) {
+                        OutlinedTextField(
+                            value = boundaryClassifications.find { it.first == boundaryClassification }?.second ?: "None",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Boundary Classification") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedBoundary) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedBoundary,
+                            onDismissRequest = { expandedBoundary = false }
+                        ) {
+                            boundaryClassifications.forEach { (value, label) ->
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = {
+                                        boundaryClassification = value
+                                        expandedBoundary = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // Distance Offshore numeric input
+                    OutlinedTextField(
+                        value = distanceOffshore,
+                        onValueChange = {
+                            distanceOffshore = it
+                            distanceOffshoreError = false
+                        },
+                        label = { Text("Distance Offshore") },
+                        placeholder = { Text("e.g., 12.5") },
+                        suffix = { Text("nm") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        isError = distanceOffshoreError,
+                        supportingText = if (distanceOffshoreError) {
+                            { Text("Please enter a valid number") }
+                        } else null,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         },
         confirmButton = {
             Button(
-                onClick = { 
+                onClick = {
                     selectedBoat?.let { boat ->
-                        android.util.Log.d("StartTripDialog", "Starting trip for boat: ${boat.name} (${boat.id})")
-                        onConfirm(boat.id, waterType, role)
+                        // Validate distance offshore
+                        var hasErrors = false
+                        if (distanceOffshore.isNotEmpty()) {
+                            try {
+                                val distance = distanceOffshore.toDouble()
+                                if (distance < 0) {
+                                    distanceOffshoreError = true
+                                    hasErrors = true
+                                }
+                            } catch (e: NumberFormatException) {
+                                distanceOffshoreError = true
+                                hasErrors = true
+                            }
+                        }
+
+                        if (!hasErrors) {
+                            android.util.Log.d("StartTripDialog", "Starting trip for boat: ${boat.name} (${boat.id})")
+                            onConfirm(
+                                boat.id,
+                                waterType,
+                                role,
+                                if (bodyOfWater.isNotEmpty()) bodyOfWater else null,
+                                if (boundaryClassification.isNotEmpty()) boundaryClassification else null,
+                                if (distanceOffshore.isNotEmpty()) distanceOffshore.toDouble() else null
+                            )
+                        }
                     }
                 },
                 enabled = selectedBoat != null && enabledBoats.isNotEmpty()

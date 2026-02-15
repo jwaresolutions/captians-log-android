@@ -97,7 +97,7 @@ data class CreateTripRequest(
     val startTime: String,
     val endTime: String?,
     val waterType: String = "inland",
-    val role: String = "captain",
+    val role: String = "master",
     val gpsPoints: List<CreateGpsPointRequest>,
     val manualData: ManualData? = null
 )

@@ -115,7 +115,7 @@ object InputValidator {
             return false
         }
         
-        if (role != null && !validateEnum(role, listOf("captain", "crew", "observer"), "role")) {
+        if (role != null && !validateEnum(role, listOf("master", "mate", "operator", "deckhand", "engineer", "other"), "role")) {
             return false
         }
         

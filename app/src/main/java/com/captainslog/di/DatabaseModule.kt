@@ -5,6 +5,7 @@ import com.captainslog.database.AppDatabase
 import com.captainslog.database.dao.*
 import com.captainslog.database.migrations.MIGRATION_9_10
 import com.captainslog.database.migrations.MIGRATION_10_11
+import com.captainslog.database.migrations.MIGRATION_11_12
 import androidx.room.Room
 import dagger.Module
 import dagger.Provides
@@ -25,7 +26,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "boat_tracking_database"
         )
-            .addMigrations(MIGRATION_9_10, MIGRATION_10_11)
+            .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
             .fallbackToDestructiveMigration()
             .build()
     }

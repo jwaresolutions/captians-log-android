@@ -192,6 +192,9 @@ class TripTrackingViewModel @Inject constructor(
         boatId: String,
         waterType: String = GpsTrackingService.DEFAULT_WATER_TYPE,
         role: String = GpsTrackingService.DEFAULT_ROLE,
+        bodyOfWater: String? = null,
+        boundaryClassification: String? = null,
+        distanceOffshore: Double? = null,
         updateIntervalMs: Long = GpsTrackingService.DEFAULT_UPDATE_INTERVAL_MS
     ) {
         Log.d(TAG, "startTrip() called - boat: $boatId, waterType: $waterType, role: $role")
@@ -224,7 +227,7 @@ class TripTrackingViewModel @Inject constructor(
             }
 
             // Continue with trip start logic
-            startTripInternal(context, boatId, waterType, role, updateIntervalMs)
+            startTripInternal(context, boatId, waterType, role, bodyOfWater, boundaryClassification, distanceOffshore, updateIntervalMs)
         }
     }
 
@@ -236,6 +239,9 @@ class TripTrackingViewModel @Inject constructor(
         boatId: String,
         waterType: String,
         role: String,
+        bodyOfWater: String?,
+        boundaryClassification: String?,
+        distanceOffshore: Double?,
         updateIntervalMs: Long
     ) {
         try {
@@ -266,6 +272,9 @@ class TripTrackingViewModel @Inject constructor(
                 putExtra(GpsTrackingService.EXTRA_BOAT_ID, boatId)
                 putExtra(GpsTrackingService.EXTRA_WATER_TYPE, waterType)
                 putExtra(GpsTrackingService.EXTRA_ROLE, role)
+                putExtra(GpsTrackingService.EXTRA_BODY_OF_WATER, bodyOfWater)
+                putExtra(GpsTrackingService.EXTRA_BOUNDARY_CLASSIFICATION, boundaryClassification)
+                putExtra(GpsTrackingService.EXTRA_DISTANCE_OFFSHORE, distanceOffshore)
                 putExtra(GpsTrackingService.EXTRA_UPDATE_INTERVAL, updateIntervalMs)
             }
 

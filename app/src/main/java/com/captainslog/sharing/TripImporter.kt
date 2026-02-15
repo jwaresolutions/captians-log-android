@@ -127,7 +127,7 @@ class TripImporter(
             startTime = Date(trip.startTime),
             endTime = trip.endTime?.let { Date(it) },
             waterType = trip.waterType ?: "inland",
-            role = trip.role ?: "captain",
+            role = trip.role ?: "master",
             weatherConditions = trip.weatherConditions,
             destination = trip.destination,
             numberOfPassengers = trip.passengerCount,

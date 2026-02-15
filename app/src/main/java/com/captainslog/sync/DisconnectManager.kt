@@ -168,7 +168,7 @@ class DisconnectManager @Inject constructor(
 
         for (trip in allTrips) {
             val isCaptain = trip.captainId == null || trip.captainId == currentUserId
-            val isCrew = trip.role == "crew"
+            val isCrew = trip.role == "deckhand"
             val isOnOwnedBoat = trip.boatId in ownedBoats
 
             when {

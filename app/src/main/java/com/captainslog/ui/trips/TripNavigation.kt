@@ -100,12 +100,15 @@ fun TripNavigation(
                     selectedTripId = tripId
                     currentScreen = TripScreen.TripDetail
                 },
-                onStartNewTrip = { boatId, waterType, role ->
+                onStartNewTrip = { boatId, waterType, role, bodyOfWater, boundaryClassification, distanceOffshore ->
                     viewModel.startTrip(
                         context = context,
                         boatId = boatId,
                         waterType = waterType,
-                        role = role
+                        role = role,
+                        bodyOfWater = bodyOfWater,
+                        boundaryClassification = boundaryClassification,
+                        distanceOffshore = distanceOffshore
                     )
 
                     // Navigate to trip detail after starting

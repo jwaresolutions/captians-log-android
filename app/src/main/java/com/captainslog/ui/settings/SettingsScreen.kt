@@ -13,6 +13,8 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Description
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -76,6 +78,8 @@ fun SettingsScreen(
     var showImportConfirmDialog by remember { mutableStateOf(false) }
     var pendingImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var showPrivacyPolicy by remember { mutableStateOf(false) }
+    var showPersonalInfo by remember { mutableStateOf(false) }
+    var showFormGenerator by remember { mutableStateOf(false) }
 
     val conflictLogger = remember { ConflictLogger(context) }
     val securePreferences = remember { SecurePreferences(context) }
@@ -117,20 +121,22 @@ fun SettingsScreen(
     }
 
     // Report breadcrumbs based on current sub-screen
-    LaunchedEffect(showBoatManagement, showSyncSettings, showNauticalSettings, showShareBoat, showScanBoat) {
+    LaunchedEffect(showBoatManagement, showSyncSettings, showNauticalSettings, showShareBoat, showScanBoat, showPersonalInfo, showFormGenerator) {
         val crumbs = when {
             showShareBoat -> listOf(BreadcrumbItem("Manage Boats"), BreadcrumbItem("Share Boat"))
             showScanBoat -> listOf(BreadcrumbItem("Manage Boats"), BreadcrumbItem("Scan Boat QR"))
             showBoatManagement -> listOf(BreadcrumbItem("Manage Boats"))
             showSyncSettings -> listOf(BreadcrumbItem("Sync Settings"))
             showNauticalSettings -> listOf(BreadcrumbItem("Nautical Data"))
+            showPersonalInfo -> listOf(BreadcrumbItem("Personal Information"))
+            showFormGenerator -> listOf(BreadcrumbItem("Generate CG-719S"))
             else -> emptyList()
         }
         val backToRoot: (() -> Unit)? = when {
             showShareBoat -> { { showShareBoat = false; selectedBoatId = null } }
             showScanBoat -> { { showScanBoat = false } }
-            showBoatManagement || showSyncSettings || showNauticalSettings -> {
-                { showBoatManagement = false; showSyncSettings = false; showNauticalSettings = false }
+            showBoatManagement || showSyncSettings || showNauticalSettings || showPersonalInfo || showFormGenerator -> {
+                { showBoatManagement = false; showSyncSettings = false; showNauticalSettings = false; showPersonalInfo = false; showFormGenerator = false }
             }
             else -> null
         }
@@ -158,6 +164,19 @@ fun SettingsScreen(
             },
             modifier = modifier,
             database = database
+        )
+    } else if (showPersonalInfo) {
+        PersonalInfoEditScreen(
+            securePreferences = securePreferences,
+            onBack = { showPersonalInfo = false },
+            modifier = modifier
+        )
+    } else if (showFormGenerator) {
+        CG719SFormScreen(
+            database = database,
+            securePreferences = securePreferences,
+            onBack = { showFormGenerator = false },
+            modifier = modifier
         )
     } else if (showNauticalSettings) {
         NauticalSettingsScreen(modifier = modifier)
@@ -204,6 +223,30 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
+            // Personal Information Section
+            SettingsSection(title = "Personal Information") {
+                SettingsItem(
+                    icon = Icons.Filled.Person,
+                    title = "Personal Information",
+                    subtitle = "Manage your personal details for printed forms",
+                    onClick = { showPersonalInfo = true }
+                )
+            }
+
+            Divider()
+
+            // Forms Section
+            SettingsSection(title = "Forms") {
+                SettingsItem(
+                    icon = Icons.Filled.Description,
+                    title = "Generate CG-719S Form",
+                    subtitle = "Create sea service forms from your trip data",
+                    onClick = { showFormGenerator = true }
+                )
+            }
+
+            Divider()
+
             // Boat Management Section
             SettingsSection(title = "Boats") {
                 SettingsItem(
@@ -477,6 +520,100 @@ For questions about this policy, visit boat.jware.dev.""",
                 }
             }
         )
+    }
+}
+
+@Composable
+fun PersonalInfoEditScreen(
+    securePreferences: SecurePreferences,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var firstName by remember { mutableStateOf(securePreferences.profileFirstName ?: "") }
+    var middleName by remember { mutableStateOf(securePreferences.profileMiddleName ?: "") }
+    var lastName by remember { mutableStateOf(securePreferences.profileLastName ?: "") }
+    var referenceNumber by remember { mutableStateOf(securePreferences.referenceNumber ?: "") }
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "Personal Information",
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        OutlinedTextField(
+            value = firstName,
+            onValueChange = { firstName = it },
+            label = { Text("First Name") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
+        )
+
+        OutlinedTextField(
+            value = middleName,
+            onValueChange = { middleName = it },
+            label = { Text("Middle Name") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
+        )
+
+        OutlinedTextField(
+            value = lastName,
+            onValueChange = { lastName = it },
+            label = { Text("Last Name") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
+        )
+
+        OutlinedTextField(
+            value = referenceNumber,
+            onValueChange = { referenceNumber = it },
+            label = { Text("Reference Number") },
+            supportingText = { Text("MMC reference number, if applicable") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
+        )
+
+        Text(
+            text = "Social Security Number is not stored in this app. You will need to fill it in manually on the printed form.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
+
+        Button(
+            onClick = {
+                scope.launch {
+                    securePreferences.profileFirstName = firstName.ifBlank { null }
+                    securePreferences.profileMiddleName = middleName.ifBlank { null }
+                    securePreferences.profileLastName = lastName.ifBlank { null }
+                    securePreferences.referenceNumber = referenceNumber.ifBlank { null }
+
+                    android.widget.Toast.makeText(
+                        context,
+                        "Personal information saved",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+
+                    onBack()
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Save")
+        }
     }
 }
 

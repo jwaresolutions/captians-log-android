@@ -26,13 +26,24 @@ fun TripEditDialog(
     var selectedBoatId by remember { mutableStateOf(trip.boatId) }
     var selectedWaterType by remember { mutableStateOf(trip.waterType) }
     var selectedRole by remember { mutableStateOf(trip.role) }
+    var bodyOfWater by remember { mutableStateOf(trip.bodyOfWater ?: "") }
+    var boundaryClassification by remember { mutableStateOf(trip.boundaryClassification ?: "") }
+    var distanceOffshore by remember { mutableStateOf(trip.distanceOffshore?.toString() ?: "") }
 
     var expandedBoat by remember { mutableStateOf(false) }
     var expandedWaterType by remember { mutableStateOf(false) }
     var expandedRole by remember { mutableStateOf(false) }
+    var expandedBoundary by remember { mutableStateOf(false) }
+    var distanceOffshoreError by remember { mutableStateOf(false) }
 
     val waterTypes = listOf("inland", "coastal", "offshore")
-    val roles = listOf("captain", "crew", "observer")
+    val roles = listOf("master", "mate", "operator", "deckhand", "engineer", "other")
+    val boundaryClassifications = listOf(
+        "" to "None",
+        "great_lakes" to "Great Lakes",
+        "shoreward" to "Shoreward of Boundary",
+        "seaward" to "Seaward of Boundary"
+    )
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -149,6 +160,65 @@ fun TripEditDialog(
                     }
                 }
 
+                // Body of Water
+                OutlinedTextField(
+                    value = bodyOfWater,
+                    onValueChange = { bodyOfWater = it },
+                    label = { Text("Body of Water") },
+                    placeholder = { Text("e.g., Chesapeake Bay") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Boundary Classification
+                ExposedDropdownMenuBox(
+                    expanded = expandedBoundary,
+                    onExpandedChange = { expandedBoundary = !expandedBoundary }
+                ) {
+                    OutlinedTextField(
+                        value = boundaryClassifications.find { it.first == boundaryClassification }?.second ?: "None",
+                        onValueChange = { },
+                        readOnly = true,
+                        label = { Text("Boundary Classification") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedBoundary) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = expandedBoundary,
+                        onDismissRequest = { expandedBoundary = false }
+                    ) {
+                        boundaryClassifications.forEach { (value, label) ->
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    boundaryClassification = value
+                                    expandedBoundary = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Distance Offshore
+                OutlinedTextField(
+                    value = distanceOffshore,
+                    onValueChange = {
+                        distanceOffshore = it
+                        distanceOffshoreError = false
+                    },
+                    label = { Text("Distance Offshore") },
+                    placeholder = { Text("e.g., 12.5") },
+                    suffix = { Text("nm") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    isError = distanceOffshoreError,
+                    supportingText = if (distanceOffshoreError) {
+                        { Text("Please enter a valid number") }
+                    } else null,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Action buttons
@@ -165,14 +235,34 @@ fun TripEditDialog(
 
                     Button(
                         onClick = {
-                            val updatedTrip = trip.copy(
-                                boatId = selectedBoatId,
-                                waterType = selectedWaterType,
-                                role = selectedRole,
-                                synced = false, // Mark as not synced since we're updating
-                                lastModified = Date()
-                            )
-                            onSave(updatedTrip)
+                            // Validate distance offshore
+                            var hasErrors = false
+                            if (distanceOffshore.isNotEmpty()) {
+                                try {
+                                    val distance = distanceOffshore.toDouble()
+                                    if (distance < 0) {
+                                        distanceOffshoreError = true
+                                        hasErrors = true
+                                    }
+                                } catch (e: NumberFormatException) {
+                                    distanceOffshoreError = true
+                                    hasErrors = true
+                                }
+                            }
+
+                            if (!hasErrors) {
+                                val updatedTrip = trip.copy(
+                                    boatId = selectedBoatId,
+                                    waterType = selectedWaterType,
+                                    role = selectedRole,
+                                    bodyOfWater = if (bodyOfWater.isNotEmpty()) bodyOfWater else null,
+                                    boundaryClassification = if (boundaryClassification.isNotEmpty()) boundaryClassification else null,
+                                    distanceOffshore = if (distanceOffshore.isNotEmpty()) distanceOffshore.toDouble() else null,
+                                    synced = false, // Mark as not synced since we're updating
+                                    lastModified = Date()
+                                )
+                                onSave(updatedTrip)
+                            }
                         },
                         modifier = Modifier.weight(1f)
                     ) {
@@ -196,10 +286,13 @@ fun ManualDataEditDialog(
     var weatherConditions by remember { mutableStateOf(trip.weatherConditions ?: "") }
     var numberOfPassengers by remember { mutableStateOf(trip.numberOfPassengers?.toString() ?: "") }
     var destination by remember { mutableStateOf(trip.destination ?: "") }
+    var bodyOfWater by remember { mutableStateOf(trip.bodyOfWater ?: "") }
+    var distanceOffshore by remember { mutableStateOf(trip.distanceOffshore?.toString() ?: "") }
 
     var engineHoursError by remember { mutableStateOf(false) }
     var fuelConsumedError by remember { mutableStateOf(false) }
     var numberOfPassengersError by remember { mutableStateOf(false) }
+    var distanceOffshoreError by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -292,6 +385,33 @@ fun ManualDataEditDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // Body of Water
+                OutlinedTextField(
+                    value = bodyOfWater,
+                    onValueChange = { bodyOfWater = it },
+                    label = { Text("Body of Water") },
+                    placeholder = { Text("e.g., Chesapeake Bay") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Distance Offshore
+                OutlinedTextField(
+                    value = distanceOffshore,
+                    onValueChange = {
+                        distanceOffshore = it
+                        distanceOffshoreError = false
+                    },
+                    label = { Text("Distance Offshore") },
+                    placeholder = { Text("e.g., 12.5") },
+                    suffix = { Text("nm") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    isError = distanceOffshoreError,
+                    supportingText = if (distanceOffshoreError) {
+                        { Text("Please enter a valid number") }
+                    } else null,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Action buttons
@@ -350,6 +470,19 @@ fun ManualDataEditDialog(
                                 }
                             }
 
+                            if (distanceOffshore.isNotEmpty()) {
+                                try {
+                                    val distance = distanceOffshore.toDouble()
+                                    if (distance < 0) {
+                                        distanceOffshoreError = true
+                                        hasErrors = true
+                                    }
+                                } catch (e: NumberFormatException) {
+                                    distanceOffshoreError = true
+                                    hasErrors = true
+                                }
+                            }
+
                             if (!hasErrors) {
                                 val updatedTrip = trip.copy(
                                     engineHours = if (engineHours.isNotEmpty()) engineHours.toDouble() else null,
@@ -357,6 +490,8 @@ fun ManualDataEditDialog(
                                     weatherConditions = if (weatherConditions.isNotEmpty()) weatherConditions else null,
                                     numberOfPassengers = if (numberOfPassengers.isNotEmpty()) numberOfPassengers.toInt() else null,
                                     destination = if (destination.isNotEmpty()) destination else null,
+                                    bodyOfWater = if (bodyOfWater.isNotEmpty()) bodyOfWater else null,
+                                    distanceOffshore = if (distanceOffshore.isNotEmpty()) distanceOffshore.toDouble() else null,
                                     synced = false, // Mark as not synced since we're updating
                                     lastModified = Date()
                                 )

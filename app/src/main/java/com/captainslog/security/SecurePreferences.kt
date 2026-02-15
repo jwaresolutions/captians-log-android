@@ -30,6 +30,10 @@ class SecurePreferences(context: Context) {
         private const val KEY_SAVE_USERNAME = "save_username"
         private const val KEY_DEVICE_ID = "device_id"
         private const val KEY_DISPLAY_NAME = "display_name"
+        private const val KEY_PROFILE_FIRST_NAME = "profile_first_name"
+        private const val KEY_PROFILE_MIDDLE_NAME = "profile_middle_name"
+        private const val KEY_PROFILE_LAST_NAME = "profile_last_name"
+        private const val KEY_REFERENCE_NUMBER = "reference_number"
     }
 
     var jwtToken: String?
@@ -72,6 +76,22 @@ class SecurePreferences(context: Context) {
     var displayName: String?
         get() = sharedPreferences.getString(KEY_DISPLAY_NAME, null)
         set(value) = sharedPreferences.edit().putString(KEY_DISPLAY_NAME, value).apply()
+
+    var profileFirstName: String?
+        get() = sharedPreferences.getString(KEY_PROFILE_FIRST_NAME, null)
+        set(value) = sharedPreferences.edit().putString(KEY_PROFILE_FIRST_NAME, value).apply()
+
+    var profileMiddleName: String?
+        get() = sharedPreferences.getString(KEY_PROFILE_MIDDLE_NAME, null)
+        set(value) = sharedPreferences.edit().putString(KEY_PROFILE_MIDDLE_NAME, value).apply()
+
+    var profileLastName: String?
+        get() = sharedPreferences.getString(KEY_PROFILE_LAST_NAME, null)
+        set(value) = sharedPreferences.edit().putString(KEY_PROFILE_LAST_NAME, value).apply()
+
+    var referenceNumber: String?
+        get() = sharedPreferences.getString(KEY_REFERENCE_NUMBER, null)
+        set(value) = sharedPreferences.edit().putString(KEY_REFERENCE_NUMBER, value).apply()
 
     fun clear() {
         sharedPreferences.edit().clear().apply()

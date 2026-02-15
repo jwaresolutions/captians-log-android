@@ -16,7 +16,7 @@ data class TripEntity(
     val startTime: Date,
     val endTime: Date? = null,
     val waterType: String = "inland", // inland, coastal, offshore
-    val role: String = "captain", // captain, crew, observer
+    val role: String = "master", // master, mate, operator, deckhand, engineer, other
     val engineHours: Double? = null,
     val fuelConsumed: Double? = null,
     val weatherConditions: String? = null,
@@ -30,5 +30,9 @@ data class TripEntity(
     val originTimestamp: Long? = null,   // Unix timestamp when shared/imported
     val isReadOnly: Boolean = false,     // True for crew trips after disconnect
     val captainTripId: String? = null,   // On crew devices, links to captain's original trip ID for re-scan updates
-    val captainName: String? = null      // Display name of the captain
+    val captainName: String? = null,     // Display name of the captain
+    // CG-719S form fields
+    val bodyOfWater: String? = null,     // e.g., "Chesapeake Bay", "Gulf of Mexico"
+    val boundaryClassification: String? = null, // great_lakes, shoreward, seaward
+    val distanceOffshore: Double? = null // Nautical miles
 )

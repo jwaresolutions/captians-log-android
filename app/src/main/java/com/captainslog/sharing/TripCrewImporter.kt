@@ -81,7 +81,7 @@ class TripCrewImporter(
             startTime = Date(shareData.data.startTime),
             endTime = shareData.data.endTime?.let { Date(it) },
             waterType = shareData.data.waterType,
-            role = "crew",
+            role = "deckhand",
             captainId = shareData.origin,
             captainTripId = shareData.data.tripId,
             captainName = shareData.data.captainName,

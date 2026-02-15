@@ -89,6 +89,31 @@ class BoatRepository(
     }
 
     /**
+     * Update boat details (name, vessel details, owner info) and sync immediately
+     */
+    suspend fun updateBoatDetails(boat: BoatEntity): Result<Unit> {
+        return try {
+            val existingBoat = database.boatDao().getBoatById(boat.id)
+            if (existingBoat != null) {
+                val updatedBoat = boat.copy(
+                    synced = false,
+                    lastModified = Date()
+                )
+                database.boatDao().updateBoat(updatedBoat)
+
+                // Sync immediately if connected, queue if offline
+                syncOrchestrator.syncEntity(DataType.BOATS, boat.id)
+
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Boat not found"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
      * Update boat enabled status and sync immediately
      */
     suspend fun updateBoatStatus(boatId: String, enabled: Boolean): Result<Unit> {
@@ -111,10 +136,10 @@ class BoatRepository(
                     )
                 }
                 database.boatDao().updateBoat(updatedBoat)
-                
+
                 // Sync immediately if connected, queue if offline
                 syncOrchestrator.syncEntity(DataType.BOATS,boatId)
-                
+
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Boat not found"))

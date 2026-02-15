@@ -62,7 +62,7 @@ fun TripDetailScreen(
             CrewCard(
                 crewMembers = crewMembers,
                 isActiveTrip = trip.endTime == null,
-                isCaptain = trip.role == "captain",
+                isCaptain = trip.role == "master",
                 onShareWithCrew = onShareWithCrew,
                 onJoinTrip = onJoinTrip
             )

@@ -54,6 +54,20 @@ class BoatViewModel @Inject constructor(
     }
 
     /**
+     * Update boat details (name, vessel details, owner info)
+     */
+    fun updateBoatDetails(boat: BoatEntity) {
+        launchWithErrorHandling(
+            onSuccess = { setSuccess("Boat updated successfully") }
+        ) {
+            val result = repository.updateBoatDetails(boat)
+            if (result.isFailure) {
+                throw result.exceptionOrNull() ?: Exception("Failed to update boat")
+            }
+        }
+    }
+
+    /**
      * Toggle boat enabled status
      */
     fun toggleBoatStatus(boatId: String, enabled: Boolean) {

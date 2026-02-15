@@ -20,5 +20,25 @@ data class BoatEntity(
     val createdAt: Date = Date(),
     val ownerId: String? = null,
     val originSource: String? = null,
-    val originTimestamp: Long? = null
+    val originTimestamp: Long? = null,
+    // Vessel details for CG-719S form
+    val officialNumber: String? = null,
+    val grossTons: Double? = null,
+    val lengthFeet: Int? = null,
+    val lengthInches: Int? = null,
+    val widthFeet: Int? = null,
+    val widthInches: Int? = null,
+    val depthFeet: Int? = null,
+    val depthInches: Int? = null,
+    val propulsionType: String? = null, // motor, steam, gas_turbine, sail, aux_sail
+    // Owner/Operator info for CG-719S form
+    val ownerFirstName: String? = null,
+    val ownerMiddleName: String? = null,
+    val ownerLastName: String? = null,
+    val ownerStreetAddress: String? = null,
+    val ownerCity: String? = null,
+    val ownerState: String? = null,
+    val ownerZipCode: String? = null,
+    val ownerEmail: String? = null,
+    val ownerPhone: String? = null
 )

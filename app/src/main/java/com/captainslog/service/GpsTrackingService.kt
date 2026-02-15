@@ -54,11 +54,14 @@ class GpsTrackingService : Service() {
         const val EXTRA_BOAT_ID = "boat_id"
         const val EXTRA_WATER_TYPE = "water_type"
         const val EXTRA_ROLE = "role"
+        const val EXTRA_BODY_OF_WATER = "body_of_water"
+        const val EXTRA_BOUNDARY_CLASSIFICATION = "boundary_classification"
+        const val EXTRA_DISTANCE_OFFSHORE = "distance_offshore"
         const val EXTRA_UPDATE_INTERVAL = "update_interval"
         
         const val DEFAULT_UPDATE_INTERVAL_MS = 5000L // 5 seconds
         const val DEFAULT_WATER_TYPE = "inland"
-        const val DEFAULT_ROLE = "captain"
+        const val DEFAULT_ROLE = "master"
     }
 
     @Inject
@@ -102,12 +105,17 @@ class GpsTrackingService : Service() {
                 val boatId = intent.getStringExtra(EXTRA_BOAT_ID)
                 val waterType = intent.getStringExtra(EXTRA_WATER_TYPE) ?: DEFAULT_WATER_TYPE
                 val role = intent.getStringExtra(EXTRA_ROLE) ?: DEFAULT_ROLE
+                val bodyOfWater = intent.getStringExtra(EXTRA_BODY_OF_WATER)
+                val boundaryClassification = intent.getStringExtra(EXTRA_BOUNDARY_CLASSIFICATION)
+                val distanceOffshore = if (intent.hasExtra(EXTRA_DISTANCE_OFFSHORE)) {
+                    intent.getDoubleExtra(EXTRA_DISTANCE_OFFSHORE, 0.0)
+                } else null
                 updateIntervalMs = intent.getLongExtra(EXTRA_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL_MS)
-                
+
                 Log.d(TAG, "START_TRIP: boatId=$boatId, waterType=$waterType, role=$role, interval=$updateIntervalMs")
-                
+
                 if (boatId != null) {
-                    startTrip(boatId, waterType, role)
+                    startTrip(boatId, waterType, role, bodyOfWater, boundaryClassification, distanceOffshore)
                 } else {
                     Log.e(TAG, "Cannot start trip: boatId is null")
                     stopSelf()
@@ -219,7 +227,14 @@ class GpsTrackingService : Service() {
     /**
      * Start a new trip and begin GPS tracking
      */
-    fun startTrip(boatId: String, waterType: String = DEFAULT_WATER_TYPE, role: String = DEFAULT_ROLE) {
+    fun startTrip(
+        boatId: String,
+        waterType: String = DEFAULT_WATER_TYPE,
+        role: String = DEFAULT_ROLE,
+        bodyOfWater: String? = null,
+        boundaryClassification: String? = null,
+        distanceOffshore: Double? = null
+    ) {
         if (isTracking) {
             Log.w(TAG, "Already tracking a trip, ignoring start request")
             return // Already tracking
@@ -250,7 +265,10 @@ class GpsTrackingService : Service() {
                     boatId = boatId,
                     startTime = Date(),
                     waterType = waterType,
-                    role = role
+                    role = role,
+                    bodyOfWater = bodyOfWater,
+                    boundaryClassification = boundaryClassification,
+                    distanceOffshore = distanceOffshore
                 )
                 database.tripDao().insertTrip(trip)
                 currentTripId = trip.id
