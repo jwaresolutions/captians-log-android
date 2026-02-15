@@ -92,23 +92,6 @@ fun NauticalSettingsScreen(
 
         HorizontalDivider()
 
-        // Paid Providers
-        SettingsSection(title = "Paid Providers") {
-            NauticalProviders.paid.forEach { provider ->
-                ProviderCard(
-                    provider = provider,
-                    enabled = settings[provider.id]?.enabled ?: false,
-                    apiKey = settings[provider.id]?.apiKey ?: "",
-                    apiKeyVerified = settings[provider.id]?.options?.get("apiKeyVerified") == "true",
-                    onToggle = { settingsManager.toggleProvider(provider.id) },
-                    onApiKeyChange = { settingsManager.setApiKey(provider.id, it) },
-                    onApiKeyVerified = { verified -> settingsManager.setProviderOption(provider.id, "apiKeyVerified", verified.toString()) }
-                )
-            }
-        }
-
-        HorizontalDivider()
-
         // Clear all tile cache
         SettingsSection(title = "Cache") {
             var showConfirmDialog by remember { mutableStateOf(false) }
