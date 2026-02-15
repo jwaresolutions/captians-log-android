@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -31,6 +32,8 @@ data class BreadcrumbItem(
 @Composable
 fun AppTopBar(
     breadcrumbs: List<BreadcrumbItem>,
+    onQrImportClick: () -> Unit = {},
+    qrImportActive: Boolean = false,
     onNotesClick: () -> Unit = {},
     onTodosClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
@@ -86,6 +89,15 @@ fun AppTopBar(
             }
         },
         actions = {
+            // QR Import button
+            IconButton(onClick = onQrImportClick) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "Import via QR",
+                    tint = if (qrImportActive) Color.Yellow else Color.White
+                )
+            }
+
             // Notes button
             IconButton(onClick = onNotesClick) {
                 Icon(

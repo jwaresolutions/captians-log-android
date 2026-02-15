@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Generate QR codes for boat data import into Captain's Log Android app">
+    <title>Boat Entry Form - Captain's Log</title>
+    <link rel="stylesheet" href="/shared.css">
+    <link rel="stylesheet" href="/tools/shared.css">
+    <style>
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: #999;
+            font-size: 0.95rem;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .form-section h2 {
+            font-size: 1.3rem;
+            color: #ff9933;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 153, 51, 0.3);
+        }
+
+        .dimension-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .dimension-input {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .dimension-input input {
+            flex: 1;
+        }
+
+        .dimension-input span {
+            color: #666;
+            font-size: 0.85rem;
+            min-width: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .dimension-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="starfield"></canvas>
+
+    <div class="page-content">
+        <div class="container">
+            <a href="/">
+                <img class="logo logo-small" src="/captains-log-logo.png" alt="Captain's Log">
+            </a>
+
+            <div class="page-header">
+                <h1>Boat Entry Form</h1>
+                <p>Generate a QR code to import boat data into the Captain's Log app</p>
+            </div>
+
+            <!-- Privacy Notice -->
+            <div class="banner banner-info">
+                <strong>Privacy Notice:</strong> Your data never leaves your computer. Nothing is saved or transmitted — if you refresh the page, your data will be gone.
+            </div>
+
+            <!-- Import Guidance -->
+            <div class="banner banner-success">
+                <strong>Import Guidance:</strong> When you scan the QR code, the app will import this as a new boat or let you update an existing one.
+            </div>
+
+            <!-- Form -->
+            <form id="boatForm">
+                <!-- Vessel Information -->
+                <div class="form-section">
+                    <h2>Vessel Information</h2>
+
+                    <div class="form-group">
+                        <label for="name">Vessel Name <span class="required">*</span></label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="officialNumber">Official Number</label>
+                        <input type="text" id="officialNumber" name="officialNumber">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="grossTons">Gross Tons</label>
+                        <input type="number" id="grossTons" name="grossTons" step="0.01" min="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Length</label>
+                        <div class="dimension-group">
+                            <div class="dimension-input">
+                                <input type="number" id="lengthFeet" name="lengthFeet" placeholder="Feet" min="0">
+                                <span>ft</span>
+                            </div>
+                            <div class="dimension-input">
+                                <input type="number" id="lengthInches" name="lengthInches" placeholder="Inches" min="0" max="11">
+                                <span>in</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Width/Beam</label>
+                        <div class="dimension-group">
+                            <div class="dimension-input">
+                                <input type="number" id="widthFeet" name="widthFeet" placeholder="Feet" min="0">
+                                <span>ft</span>
+                            </div>
+                            <div class="dimension-input">
+                                <input type="number" id="widthInches" name="widthInches" placeholder="Inches" min="0" max="11">
+                                <span>in</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Depth</label>
+                        <div class="dimension-group">
+                            <div class="dimension-input">
+                                <input type="number" id="depthFeet" name="depthFeet" placeholder="Feet" min="0">
+                                <span>ft</span>
+                            </div>
+                            <div class="dimension-input">
+                                <input type="number" id="depthInches" name="depthInches" placeholder="Inches" min="0" max="11">
+                                <span>in</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="propulsionType">Propulsion Type</label>
+                        <select id="propulsionType" name="propulsionType">
+                            <option value="">-- Select --</option>
+                            <option value="motor">Motor</option>
+                            <option value="steam">Steam</option>
+                            <option value="gas_turbine">Gas Turbine</option>
+                            <option value="sail">Sail</option>
+                            <option value="aux_sail">Auxiliary Sail</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Owner/Operator Information -->
+                <div class="form-section">
+                    <h2>Owner/Operator Information</h2>
+
+                    <div class="form-group">
+                        <label for="ownerFirstName">First Name</label>
+                        <input type="text" id="ownerFirstName" name="ownerFirstName">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ownerMiddleName">Middle Name</label>
+                        <input type="text" id="ownerMiddleName" name="ownerMiddleName">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ownerLastName">Last Name</label>
+                        <input type="text" id="ownerLastName" name="ownerLastName">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ownerStreetAddress">Street Address</label>
+                        <input type="text" id="ownerStreetAddress" name="ownerStreetAddress">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ownerCity">City</label>
+                        <input type="text" id="ownerCity" name="ownerCity">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ownerState">State</label>
+                        <input type="text" id="ownerState" name="ownerState" maxlength="2" placeholder="e.g., CA">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ownerZipCode">Zip Code</label>
+                        <input type="text" id="ownerZipCode" name="ownerZipCode" pattern="[0-9]{5}(-[0-9]{4})?" placeholder="e.g., 12345 or 12345-6789">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ownerEmail">Email</label>
+                        <input type="email" id="ownerEmail" name="ownerEmail">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ownerPhone">Phone</label>
+                        <input type="tel" id="ownerPhone" name="ownerPhone" placeholder="e.g., (555) 123-4567">
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">Generate QR Code</button>
+                    <button type="button" id="printBtn" class="btn btn-secondary" style="display: none;">Print QR Code</button>
+                </div>
+            </form>
+
+            <!-- QR Code Display Area -->
+            <div id="qrDisplay" class="qr-display"></div>
+
+            <!-- Protocol Version Footer -->
+            <div class="protocol-version">Protocol version: 1</div>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 JWare Solutions</p>
+        </footer>
+    </div>
+
+    <!-- Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+    <!-- Application Scripts -->
+    <script src="/starfield.js"></script>
+    <script src="/tools/qr-protocol.js"></script>
+    <script src="/tools/shared.js"></script>
+
+    <script>
+        // Form handling
+        const form = document.getElementById('boatForm');
+        const qrDisplay = document.getElementById('qrDisplay');
+        const printBtn = document.getElementById('printBtn');
+
+        // Track if form has data for beforeunload warning
+        let formHasData = false;
+
+        // Detect form changes
+        form.addEventListener('input', () => {
+            formHasData = true;
+        });
+
+        // Warn before leaving if form has data
+        window.addEventListener('beforeunload', (e) => {
+            if (formHasData && !qrDisplay.innerHTML) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        // Form submission
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            // Collect form data
+            const formData = new FormData(form);
+            const boatData = {};
+
+            // Process all form fields
+            for (const [key, value] of formData.entries()) {
+                if (value.trim()) {
+                    // Convert numeric fields
+                    if (['grossTons', 'lengthFeet', 'lengthInches', 'widthFeet', 'widthInches', 'depthFeet', 'depthInches'].includes(key)) {
+                        const numValue = parseFloat(value);
+                        if (!isNaN(numValue)) {
+                            boatData[key] = numValue;
+                        }
+                    } else {
+                        boatData[key] = value;
+                    }
+                }
+            }
+
+            // Validate required fields
+            if (!boatData.name) {
+                alert('Vessel name is required.');
+                return;
+            }
+
+            try {
+                // Encode payload using QR Protocol
+                const payloads = QrProtocol.encodePayload('boat', boatData);
+
+                // Render QR codes
+                qrDisplay.innerHTML = '';
+                ToolsShared.renderQrCodes(qrDisplay, payloads);
+
+                // Show print button
+                printBtn.style.display = 'inline-block';
+
+                // Scroll to QR code
+                qrDisplay.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                // Clear beforeunload warning since QR is generated
+                formHasData = false;
+
+            } catch (error) {
+                console.error('QR generation error:', error);
+                alert('Error generating QR code: ' + error.message);
+            }
+        });
+
+        // Print button handler
+        printBtn.addEventListener('click', () => {
+            ToolsShared.printQrCodes();
+        });
+    </script>
+</body>
+</html>

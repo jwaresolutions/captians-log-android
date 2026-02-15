@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Captain's Log Data Entry Tools - Create QR codes to import data into the app.">
+    <title>Data Entry Tools - Captain's Log</title>
+    <link rel="stylesheet" href="/shared.css">
+    <style>
+        .container {
+            justify-content: flex-start;
+        }
+
+        .banner {
+            background: rgba(255, 153, 51, 0.1);
+            border: 1px solid rgba(255, 153, 51, 0.3);
+            border-radius: 8px;
+            padding: 14px 20px;
+            margin-bottom: 2rem;
+            width: 100%;
+            text-align: center;
+            font-size: 0.95rem;
+            color: #ccc;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            animation: fadeIn 1s ease 0.2s both;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #999;
+            text-align: center;
+            margin-bottom: 2.5rem;
+            animation: fadeIn 1s ease 0.4s both;
+        }
+
+        .tool-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+            width: 100%;
+            animation: fadeIn 1s ease 0.6s both;
+        }
+
+        .tool-card {
+            display: block;
+            padding: 28px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid rgba(255, 153, 51, 0.7);
+            backdrop-filter: blur(4px);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .tool-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-left-color: #ff9933;
+            transform: translateY(-2px);
+        }
+
+        .tool-card h2 {
+            color: #ff9933;
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+        }
+
+        .tool-card p {
+            color: #999;
+            font-size: 0.95rem;
+        }
+
+        .back-link {
+            margin-top: 2rem;
+            animation: fadeIn 1s ease 0.8s both;
+        }
+
+        .back-link a {
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .back-link a:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .tool-cards { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="starfield"></canvas>
+
+    <div class="page-content">
+        <div class="container">
+            <a href="/">
+                <img class="logo logo-small" src="/captains-log-logo.png" alt="Captain's Log">
+            </a>
+
+            <div class="banner">
+                Your data never leaves your computer. Nothing is saved or transmitted &mdash; if you refresh the page, your data will be gone.
+            </div>
+
+            <h1>Data Entry Tools</h1>
+            <p class="subtitle">Create QR codes to import data into Captain's Log</p>
+
+            <div class="tool-cards">
+                <a href="/tools/trip/" class="tool-card">
+                    <h2>Trip Entry</h2>
+                    <p>Log your voyages with departure/arrival ports, dates, times, and crew roles. Generate QR codes to import into the app.</p>
+                </a>
+                <a href="/tools/boat/" class="tool-card">
+                    <h2>Boat Entry</h2>
+                    <p>Enter your vessel details and generate a QR code to quickly add a boat to the app.</p>
+                </a>
+            </div>
+
+            <div class="back-link">
+                <a href="/">&larr; Back to Captain's Log</a>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 JWare Solutions</p>
+        </footer>
+    </div>
+
+    <script src="/starfield.js"></script>
+</body>
+</html>

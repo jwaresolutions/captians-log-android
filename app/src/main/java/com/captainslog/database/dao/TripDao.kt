@@ -3,6 +3,7 @@ package com.captainslog.database.dao
 import androidx.room.*
 import com.captainslog.database.entities.TripEntity
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 
 @Dao
 interface TripDao {
@@ -50,4 +51,7 @@ interface TripDao {
 
     @Query("SELECT * FROM trips WHERE captainTripId = :captainTripId LIMIT 1")
     suspend fun getTripByCaptainTripId(captainTripId: String): TripEntity?
+
+    @Query("SELECT * FROM trips WHERE boatId = :boatId AND startTime <= :endTime AND endTime >= :startTime")
+    suspend fun getOverlappingTrips(boatId: String, startTime: Date, endTime: Date): List<TripEntity>
 }

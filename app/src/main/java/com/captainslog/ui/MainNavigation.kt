@@ -28,7 +28,12 @@ import com.captainslog.ui.notes.NotesNavigation
 import com.captainslog.ui.sensors.SensorManagementScreen
 import com.captainslog.ui.settings.SettingsScreen
 import com.captainslog.ui.todos.TodoNavigation
+import com.captainslog.ui.qr.BoatImportReviewScreen
+import com.captainslog.ui.qr.QrImportScannerScreen
+import com.captainslog.ui.qr.TripImportReviewScreen
 import com.captainslog.ui.trips.TripNavigation
+import com.captainslog.qr.QrTripImporter
+import com.google.gson.JsonElement
 
 /**
  * Main navigation structure with bottom navigation bar.
@@ -79,6 +84,7 @@ fun MainNavigation(
         CurrentScreen.Notes -> "Notes"
         CurrentScreen.Todos -> "Todos"
         CurrentScreen.Settings -> "Settings"
+        CurrentScreen.QrImport -> "Import via QR"
     }
 
     val breadcrumbs = if (nestedBreadcrumbs.isEmpty()) {
@@ -93,6 +99,11 @@ fun MainNavigation(
         topBar = {
             com.captainslog.ui.components.AppTopBar(
                 breadcrumbs = breadcrumbs,
+                onQrImportClick = {
+                    nestedBreadcrumbs = emptyList()
+                    currentScreen = CurrentScreen.QrImport
+                },
+                qrImportActive = currentScreen == CurrentScreen.QrImport,
                 onNotesClick = {
                     nestedBreadcrumbs = emptyList()
                     currentScreen = CurrentScreen.Notes
@@ -149,7 +160,7 @@ fun MainNavigation(
         }
     ) { paddingValues ->
         // Handle Android back button
-        BackHandler(enabled = nestedBreadcrumbs.isNotEmpty() || currentScreen !is CurrentScreen.Tab) {
+        BackHandler(enabled = nestedBreadcrumbs.isNotEmpty() || currentScreen !is CurrentScreen.Tab || currentScreen == CurrentScreen.QrImport) {
             if (nestedBreadcrumbs.isNotEmpty() && childBackHandler != null) {
                 childBackHandler?.invoke()
             } else {
@@ -247,6 +258,65 @@ fun MainNavigation(
                     appModeManager = viewModel.appModeManager
                 )
             }
+            CurrentScreen.QrImport -> {
+                // Internal QR import navigation
+                var qrImportScreen by remember { mutableStateOf<QrImportScreen>(QrImportScreen.Scanner) }
+                // Store decoded data for passing between screens
+                var importType by remember { mutableStateOf<String?>(null) }
+                var importData by remember { mutableStateOf<JsonElement?>(null) }
+                var importQrId by remember { mutableStateOf<String?>(null) }
+                var importGeneratedAt by remember { mutableStateOf<String?>(null) }
+
+                // Handle back within QR import flow
+                BackHandler(enabled = qrImportScreen != QrImportScreen.Scanner) {
+                    qrImportScreen = QrImportScreen.Scanner
+                }
+
+                when (qrImportScreen) {
+                    QrImportScreen.Scanner -> {
+                        QrImportScannerScreen(
+                            onBack = { currentScreen = CurrentScreen.Tab(selectedTab) },
+                            onImportReady = { type, data, qrId, generatedAt ->
+                                importType = type
+                                importData = data
+                                importQrId = qrId
+                                importGeneratedAt = generatedAt
+                                qrImportScreen = if (type == "trip") QrImportScreen.TripReview else QrImportScreen.BoatReview
+                            },
+                            database = viewModel.database,
+                            modifier = Modifier.padding(paddingValues)
+                        )
+                    }
+                    QrImportScreen.TripReview -> {
+                        val tripImporter = remember {
+                            QrTripImporter(viewModel.database.tripDao(), viewModel.database.importedQrDao())
+                        }
+                        val trips = remember(importData) {
+                            importData?.let { tripImporter.parseTripData(it) } ?: emptyList()
+                        }
+                        TripImportReviewScreen(
+                            tripData = trips,
+                            qrId = importQrId!!,
+                            generatedAt = importGeneratedAt!!,
+                            onBack = { qrImportScreen = QrImportScreen.Scanner },
+                            onImportComplete = { currentScreen = CurrentScreen.Tab(selectedTab) },
+                            database = viewModel.database,
+                            modifier = Modifier.padding(paddingValues)
+                        )
+                    }
+                    QrImportScreen.BoatReview -> {
+                        BoatImportReviewScreen(
+                            boatData = importData!!,
+                            qrId = importQrId!!,
+                            generatedAt = importGeneratedAt!!,
+                            onBack = { qrImportScreen = QrImportScreen.Scanner },
+                            onImportComplete = { currentScreen = CurrentScreen.Tab(selectedTab) },
+                            database = viewModel.database,
+                            modifier = Modifier.padding(paddingValues)
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -273,4 +343,14 @@ sealed class CurrentScreen {
     object Notes : CurrentScreen()
     object Todos : CurrentScreen()
     object Settings : CurrentScreen()
+    object QrImport : CurrentScreen()
+}
+
+/**
+ * Internal navigation states for the QR import flow.
+ */
+private sealed class QrImportScreen {
+    object Scanner : QrImportScreen()
+    object TripReview : QrImportScreen()
+    object BoatReview : QrImportScreen()
 }

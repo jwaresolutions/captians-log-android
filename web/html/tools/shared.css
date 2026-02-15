@@ -1,0 +1,415 @@
+/* Tools shared form styles */
+
+.tools-container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Banners */
+.banner {
+    background: rgba(255, 153, 51, 0.1);
+    border: 1px solid rgba(255, 153, 51, 0.3);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin-bottom: 1rem;
+    width: 100%;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #ccc;
+    line-height: 1.5;
+}
+
+.banner.banner-info {
+    background: rgba(100, 160, 255, 0.08);
+    border-color: rgba(100, 160, 255, 0.3);
+    color: #aac8ee;
+}
+
+.banner.banner-warning {
+    background: rgba(255, 200, 50, 0.08);
+    border-color: rgba(255, 200, 50, 0.3);
+    color: #ddc870;
+}
+
+/* Page header */
+.tools-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.tools-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+}
+
+.tools-header p {
+    color: #999;
+    font-size: 1rem;
+}
+
+/* Form groups */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: #bbb;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.form-row-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+}
+
+/* Inputs */
+input[type="text"],
+input[type="date"],
+input[type="time"],
+input[type="number"],
+input[type="email"],
+select,
+textarea {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: border-color 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: rgba(255, 153, 51, 0.6);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+}
+
+select option {
+    background: #1a1a1a;
+    color: #e0e0e0;
+}
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.btn-primary {
+    background: rgba(255, 153, 51, 0.2);
+    color: #ff9933;
+    border: 1px solid rgba(255, 153, 51, 0.4);
+}
+
+.btn-primary:hover {
+    background: rgba(255, 153, 51, 0.3);
+    border-color: rgba(255, 153, 51, 0.7);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ccc;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-danger {
+    background: rgba(220, 60, 60, 0.15);
+    color: #e07070;
+    border: 1px solid rgba(220, 60, 60, 0.3);
+    padding: 6px 14px;
+    font-size: 0.85rem;
+}
+
+.btn-danger:hover {
+    background: rgba(220, 60, 60, 0.25);
+    border-color: rgba(220, 60, 60, 0.5);
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.button-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+}
+
+/* Trip entry cards */
+.entry-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 1.25rem;
+    position: relative;
+}
+
+.entry-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.entry-card-header h3 {
+    color: #ff9933;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Section dividers within cards */
+.form-section-label {
+    font-size: 0.8rem;
+    color: rgba(255, 153, 51, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+/* QR code display area */
+.qr-output {
+    text-align: center;
+    margin-top: 2rem;
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+}
+
+.qr-output h3 {
+    color: #ff9933;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.qr-canvas-wrapper {
+    display: inline-block;
+    padding: 16px;
+    background: #fff;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.qr-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 1rem;
+}
+
+.qr-nav button {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ccc;
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.qr-nav button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.qr-nav button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.qr-nav .qr-indicator {
+    color: #999;
+    font-size: 0.9rem;
+}
+
+/* Validation errors */
+.field-error {
+    border-color: rgba(220, 60, 60, 0.6) !important;
+}
+
+.error-message {
+    color: #e07070;
+    font-size: 0.8rem;
+    margin-top: 4px;
+}
+
+.validation-summary {
+    background: rgba(220, 60, 60, 0.1);
+    border: 1px solid rgba(220, 60, 60, 0.3);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin-bottom: 1rem;
+    color: #e07070;
+    font-size: 0.9rem;
+}
+
+/* Page-level controls */
+.page-control {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 1.5rem;
+}
+
+.page-control label {
+    display: block;
+    font-size: 0.85rem;
+    color: #bbb;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+/* Footer info */
+.protocol-footer {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 0.8rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Back link */
+.back-link {
+    margin-bottom: 1.5rem;
+}
+
+.back-link a {
+    color: rgba(255, 255, 255, 0.5);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+}
+
+.back-link a:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Print styles */
+@media print {
+    body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+    canvas#starfield,
+    .banner,
+    .tools-header,
+    .page-control,
+    .entry-card,
+    .button-row,
+    .back-link,
+    .protocol-footer,
+    footer,
+    .qr-nav {
+        display: none !important;
+    }
+    .qr-output {
+        background: none !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .qr-canvas-wrapper {
+        box-shadow: none !important;
+    }
+    /* Show all QR codes for printing */
+    .qr-code-page {
+        display: block !important;
+        page-break-after: always;
+        text-align: center;
+        padding-top: 40px;
+    }
+    .qr-code-page:last-child {
+        page-break-after: auto;
+    }
+    .qr-print-label {
+        font-size: 14pt;
+        margin-bottom: 20px;
+        color: #000;
+    }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .tools-container {
+        padding: 20px 14px;
+    }
+    .tools-header h1 {
+        font-size: 1.6rem;
+    }
+    .form-row,
+    .form-row-3 {
+        grid-template-columns: 1fr;
+    }
+    .entry-card {
+        padding: 14px;
+    }
+    .button-row {
+        flex-direction: column;
+    }
+    .btn {
+        width: 100%;
+    }
+}

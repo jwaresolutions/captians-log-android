@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Captain's Log Trip Entry - Enter trip data and generate QR codes for import.">
+    <title>Trip Entry - Captain's Log</title>
+    <link rel="stylesheet" href="/shared.css">
+    <link rel="stylesheet" href="/tools/shared.css">
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <canvas id="starfield"></canvas>
+
+    <div class="page-content">
+        <div class="tools-container">
+            <div class="back-link">
+                <a href="/tools/">&larr; Back to Tools</a>
+            </div>
+
+            <div class="banner">
+                Your data never leaves your computer. Nothing is saved or transmitted &mdash; if you refresh the page, your data will be gone.
+            </div>
+            <div class="banner banner-info">
+                Enter logs for one boat at a time. When you scan the QR code(s), the app will ask which saved boat to apply the logs to.
+            </div>
+
+            <div class="tools-header">
+                <a href="/">
+                    <img class="logo logo-small" src="/captains-log-logo.png" alt="Captain's Log">
+                </a>
+                <h1>Trip Entry</h1>
+            </div>
+
+            <!-- Page-level timezone -->
+            <div class="page-control">
+                <label for="page-timezone">Default Timezone</label>
+                <select id="page-timezone"></select>
+            </div>
+
+            <!-- Validation summary (hidden by default) -->
+            <div id="validation-summary" class="validation-summary" style="display:none;"></div>
+
+            <!-- Trip entries container -->
+            <div id="trip-entries"></div>
+
+            <!-- Add another -->
+            <div style="text-align:center; margin-bottom:1.5rem;">
+                <button type="button" class="btn btn-secondary" id="add-trip-btn">+ Add Another Trip</button>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="button-row" style="justify-content:center;">
+                <button type="button" class="btn btn-primary" id="generate-btn">Generate QR Code</button>
+                <button type="button" class="btn btn-secondary" id="print-btn" style="display:none;">Print QR Codes</button>
+            </div>
+
+            <!-- QR output -->
+            <div id="qr-output" class="qr-output" style="display:none;"></div>
+
+            <div class="protocol-footer">
+                Protocol version: 1
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 JWare Solutions</p>
+        </footer>
+    </div>
+
+    <script src="/starfield.js"></script>
+    <script src="/tools/qr-protocol.js"></script>
+    <script src="/tools/shared.js"></script>
+    <script>
+    (function() {
+      'use strict';
+
+      // ── Timezone data ──────────────────────────────────────────────────
+      var TIMEZONES = [
+        { group: 'Americas', zones: [
+          'America/New_York','America/Chicago','America/Denver','America/Los_Angeles',
+          'America/Anchorage','America/Adak','America/Phoenix',
+          'America/Toronto','America/Vancouver','America/Winnipeg','America/Halifax',
+          'America/St_Johns','America/Mexico_City','America/Bogota','America/Lima',
+          'America/Sao_Paulo','America/Buenos_Aires','America/Santiago'
+        ]},
+        { group: 'Europe', zones: [
+          'Europe/London','Europe/Dublin','Europe/Paris','Europe/Berlin','Europe/Rome',
+          'Europe/Madrid','Europe/Amsterdam','Europe/Brussels','Europe/Zurich',
+          'Europe/Stockholm','Europe/Oslo','Europe/Helsinki','Europe/Athens',
+          'Europe/Istanbul','Europe/Moscow','Europe/Warsaw','Europe/Prague',
+          'Europe/Lisbon'
+        ]},
+        { group: 'Asia', zones: [
+          'Asia/Dubai','Asia/Karachi','Asia/Kolkata','Asia/Dhaka','Asia/Bangkok',
+          'Asia/Singapore','Asia/Hong_Kong','Asia/Shanghai','Asia/Tokyo','Asia/Seoul',
+          'Asia/Taipei','Asia/Manila','Asia/Jakarta','Asia/Vladivostok'
+        ]},
+        { group: 'Pacific', zones: [
+          'Pacific/Auckland','Pacific/Fiji','Pacific/Honolulu','Pacific/Guam',
+          'Pacific/Pago_Pago','Pacific/Tahiti'
+        ]},
+        { group: 'Other', zones: [
+          'Atlantic/Reykjavik','Africa/Cairo','Africa/Lagos','Africa/Johannesburg',
+          'Africa/Nairobi','Indian/Maldives','Australia/Sydney','Australia/Perth',
+          'Australia/Adelaide','Australia/Darwin','UTC'
+        ]}
+      ];
+
+      var userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+      var tripCounter = 0;
+      var formDirty = false;
+
+      // ── Populate timezone selects ──────────────────────────────────────
+      function buildTimezoneOptions() {
+        var html = '';
+        for (var g = 0; g < TIMEZONES.length; g++) {
+          var grp = TIMEZONES[g];
+          html += '<optgroup label="' + grp.group + '">';
+          for (var z = 0; z < grp.zones.length; z++) {
+            var tz = grp.zones[z];
+            var label = tz.replace(/_/g, ' ').replace(/\//g, ' / ');
+            var sel = tz === userTimezone ? ' selected' : '';
+            html += '<option value="' + tz + '"' + sel + '>' + label + '</option>';
+          }
+          html += '</optgroup>';
+        }
+        return html;
+      }
+
+      var tzOptionsHtml = buildTimezoneOptions();
+
+      // Page-level timezone
+      var pageTzSelect = document.getElementById('page-timezone');
+      pageTzSelect.innerHTML = tzOptionsHtml;
+
+      // ── Trip entry template ────────────────────────────────────────────
+      function createTripCard(index) {
+        var num = index + 1;
+        var id = 'trip-' + index;
+        var removeBtn = index > 0
+          ? '<button type="button" class="btn btn-danger remove-trip-btn" data-index="' + index + '">Remove</button>'
+          : '';
+
+        var html =
+          '<div class="entry-card" id="' + id + '" data-index="' + index + '">' +
+            '<div class="entry-card-header">' +
+              '<h3>Trip ' + num + '</h3>' +
+              removeBtn +
+            '</div>' +
+
+            '<div class="form-section-label">Departure</div>' +
+            '<div class="form-row-3">' +
+              '<div class="form-group">' +
+                '<label>Start Date *</label>' +
+                '<input type="date" name="startDate" required>' +
+              '</div>' +
+              '<div class="form-group">' +
+                '<label>Start Time *</label>' +
+                '<input type="time" name="startTime" required>' +
+              '</div>' +
+              '<div class="form-group">' +
+                '<label>Start Timezone</label>' +
+                '<select name="startTz">' + tzOptionsHtml + '</select>' +
+              '</div>' +
+            '</div>' +
+            '<div class="form-group">' +
+              '<label>Departure Port *</label>' +
+              '<input type="text" name="departurePort" placeholder="e.g. Miami, FL">' +
+            '</div>' +
+
+            '<div class="form-section-label">Arrival</div>' +
+            '<div class="form-row-3">' +
+              '<div class="form-group">' +
+                '<label>End Date *</label>' +
+                '<input type="date" name="endDate" required>' +
+              '</div>' +
+              '<div class="form-group">' +
+                '<label>End Time *</label>' +
+                '<input type="time" name="endTime" required>' +
+              '</div>' +
+              '<div class="form-group">' +
+                '<label>End Timezone</label>' +
+                '<select name="endTz">' + tzOptionsHtml + '</select>' +
+              '</div>' +
+            '</div>' +
+            '<div class="form-group">' +
+              '<label>Arrival Port *</label>' +
+              '<input type="text" name="arrivalPort" placeholder="e.g. Nassau, Bahamas">' +
+            '</div>' +
+
+            '<div class="form-section-label">Details</div>' +
+            '<div class="form-row">' +
+              '<div class="form-group">' +
+                '<label>Body of Water *</label>' +
+                '<input type="text" name="bodyOfWater" placeholder="e.g. Atlantic Ocean">' +
+              '</div>' +
+              '<div class="form-group">' +
+                '<label>Water Type *</label>' +
+                '<select name="waterType" required>' +
+                  '<option value="">-- Select --</option>' +
+                  '<option value="inland">Inland</option>' +
+                  '<option value="coastal">Near Coastal</option>' +
+                  '<option value="offshore">Offshore</option>' +
+                  '<option value="great_lakes">Great Lakes</option>' +
+                '</select>' +
+              '</div>' +
+            '</div>' +
+            '<div class="form-row">' +
+              '<div class="form-group">' +
+                '<label>Crew Role</label>' +
+                '<select name="crewRole">' +
+                  '<option value="">-- Select --</option>' +
+                  '<option value="Master">Master</option>' +
+                  '<option value="Mate">Mate</option>' +
+                  '<option value="Able Seaman">Able Seaman</option>' +
+                  '<option value="Ordinary Seaman">Ordinary Seaman</option>' +
+                  '<option value="Engineer">Engineer</option>' +
+                  '<option value="Deckhand">Deckhand</option>' +
+                  '<option value="Other">Other</option>' +
+                '</select>' +
+              '</div>' +
+              '<div class="form-group">' +
+                '<label>Master Name</label>' +
+                '<input type="text" name="masterName" placeholder="Name of vessel master">' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+        return html;
+      }
+
+      // ── Add / remove trips ─────────────────────────────────────────────
+      var entriesContainer = document.getElementById('trip-entries');
+
+      function addTrip() {
+        var index = tripCounter++;
+        var div = document.createElement('div');
+        div.innerHTML = createTripCard(index);
+        var card = div.firstChild;
+
+        // Set timezone defaults from page-level selector
+        var tzSelects = card.querySelectorAll('select[name="startTz"], select[name="endTz"]');
+        var pageTz = pageTzSelect.value;
+        for (var i = 0; i < tzSelects.length; i++) {
+          tzSelects[i].value = pageTz;
+        }
+
+        entriesContainer.appendChild(card);
+        trackDirty(card);
+
+        // Remove button handler
+        var removeBtn = card.querySelector('.remove-trip-btn');
+        if (removeBtn) {
+          removeBtn.addEventListener('click', function() {
+            card.remove();
+            renumberTrips();
+          });
+        }
+      }
+
+      function renumberTrips() {
+        var cards = entriesContainer.querySelectorAll('.entry-card');
+        for (var i = 0; i < cards.length; i++) {
+          var h3 = cards[i].querySelector('.entry-card-header h3');
+          h3.textContent = 'Trip ' + (i + 1);
+        }
+      }
+
+      // First trip
+      addTrip();
+
+      document.getElementById('add-trip-btn').addEventListener('click', addTrip);
+
+      // Sync page timezone to new default
+      pageTzSelect.addEventListener('change', function() {
+        // Only update selects that still match the old default (don't override user edits)
+      });
+
+      // ── Dirty tracking / beforeunload ──────────────────────────────────
+      function trackDirty(root) {
+        var inputs = root.querySelectorAll('input, select, textarea');
+        for (var i = 0; i < inputs.length; i++) {
+          inputs[i].addEventListener('input', function() { formDirty = true; });
+          inputs[i].addEventListener('change', function() { formDirty = true; });
+        }
+      }
+
+      window.addEventListener('beforeunload', function(e) {
+        if (formDirty) {
+          e.preventDefault();
+          e.returnValue = '';
+        }
+      });
+
+      // ── Timezone conversion ────────────────────────────────────────────
+      /**
+       * Given a date string (YYYY-MM-DD), time string (HH:MM), and IANA timezone,
+       * return { isoUtc: string, offsetString: string }.
+       */
+      function convertToGmt(dateStr, timeStr, timezone) {
+        // Build a Date in the given timezone by parsing the components
+        var dateTimeStr = dateStr + 'T' + timeStr + ':00';
+
+        // Use Intl to find the UTC offset for this date/time in the given timezone
+        // Create a date assuming UTC first, then find what UTC time corresponds to this local time
+        var localParts = dateTimeStr.split(/[-T:]/);
+        var year = parseInt(localParts[0], 10);
+        var month = parseInt(localParts[1], 10) - 1;
+        var day = parseInt(localParts[2], 10);
+        var hour = parseInt(localParts[3], 10);
+        var minute = parseInt(localParts[4], 10);
+
+        // Use a formatting trick to get the offset:
+        // Format the date in the target timezone and in UTC, compare them
+        var refDate = new Date(Date.UTC(year, month, day, hour, minute, 0));
+
+        // Get the formatted parts in the target timezone
+        var formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: timezone,
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit',
+          hour12: false
+        });
+
+        // Binary-search style: we know the local time we want, we need to find the UTC instant.
+        // Approach: use the target timezone formatter to see what local time our refDate maps to,
+        // then adjust.
+        var formatted = formatter.formatToParts(refDate);
+        var p = {};
+        for (var i = 0; i < formatted.length; i++) {
+          p[formatted[i].type] = parseInt(formatted[i].value, 10);
+        }
+
+        // p now has what refDate looks like in the target tz
+        // We wanted: year/month/day/hour/minute in target tz
+        // refDate is: year/month/day/hour/minute in UTC
+        // Difference = offset
+        var targetLocal = new Date(Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, 0));
+        var diffMs = targetLocal.getTime() - refDate.getTime();
+
+        // The actual UTC time = refDate - diff (because if tz is UTC+5, local is 5h ahead, so UTC = local - 5h)
+        var utcTime = new Date(refDate.getTime() - diffMs);
+
+        // But we need to verify this is correct (DST edge cases), do one more iteration
+        var verify = formatter.formatToParts(utcTime);
+        var v = {};
+        for (var j = 0; j < verify.length; j++) {
+          v[verify[j].type] = parseInt(verify[j].value, 10);
+        }
+
+        // If verification shows different time, adjust once more
+        if (v.hour !== hour || v.minute !== minute || v.day !== day) {
+          var verifyLocal = new Date(Date.UTC(v.year, v.month - 1, v.day, v.hour, v.minute, 0));
+          var diffMs2 = verifyLocal.getTime() - utcTime.getTime();
+          utcTime = new Date(utcTime.getTime() - diffMs2 + (refDate.getTime() - utcTime.getTime()));
+
+          // Simpler: just recompute
+          var wanted = new Date(Date.UTC(year, month, day, hour, minute, 0));
+          utcTime = new Date(wanted.getTime() - diffMs);
+        }
+
+        // Compute offset string from diffMs
+        var offsetMinutes = Math.round(diffMs / 60000);
+        var sign = offsetMinutes >= 0 ? '+' : '-';
+        var absMinutes = Math.abs(offsetMinutes);
+        var offHours = Math.floor(absMinutes / 60);
+        var offMins = absMinutes % 60;
+        var offsetString = sign +
+          (offHours < 10 ? '0' : '') + offHours + ':' +
+          (offMins < 10 ? '0' : '') + offMins;
+
+        return {
+          isoUtc: utcTime.toISOString(),
+          offsetString: offsetString
+        };
+      }
+
+      // ── Validation ─────────────────────────────────────────────────────
+      function validate() {
+        var errors = [];
+        var cards = entriesContainer.querySelectorAll('.entry-card');
+
+        // Clear previous errors
+        var errFields = document.querySelectorAll('.field-error');
+        for (var e = 0; e < errFields.length; e++) {
+          errFields[e].classList.remove('field-error');
+        }
+
+        for (var i = 0; i < cards.length; i++) {
+          var card = cards[i];
+          var num = i + 1;
+
+          var startDate = card.querySelector('[name="startDate"]');
+          var startTime = card.querySelector('[name="startTime"]');
+          var endDate = card.querySelector('[name="endDate"]');
+          var endTime = card.querySelector('[name="endTime"]');
+          var departurePort = card.querySelector('[name="departurePort"]');
+          var arrivalPort = card.querySelector('[name="arrivalPort"]');
+          var bodyOfWater = card.querySelector('[name="bodyOfWater"]');
+          var waterType = card.querySelector('[name="waterType"]');
+
+          if (!startDate.value) { errors.push('Trip ' + num + ': Start date is required'); startDate.classList.add('field-error'); }
+          if (!startTime.value) { errors.push('Trip ' + num + ': Start time is required'); startTime.classList.add('field-error'); }
+          if (!endDate.value) { errors.push('Trip ' + num + ': End date is required'); endDate.classList.add('field-error'); }
+          if (!endTime.value) { errors.push('Trip ' + num + ': End time is required'); endTime.classList.add('field-error'); }
+          if (!departurePort.value.trim()) { errors.push('Trip ' + num + ': Departure port is required'); departurePort.classList.add('field-error'); }
+          if (!arrivalPort.value.trim()) { errors.push('Trip ' + num + ': Arrival port is required'); arrivalPort.classList.add('field-error'); }
+          if (!bodyOfWater.value.trim()) { errors.push('Trip ' + num + ': Body of water is required'); bodyOfWater.classList.add('field-error'); }
+          if (!waterType.value) { errors.push('Trip ' + num + ': Water type is required'); waterType.classList.add('field-error'); }
+
+          // End must be after start
+          if (startDate.value && startTime.value && endDate.value && endTime.value) {
+            var startTz = card.querySelector('[name="startTz"]').value;
+            var endTz = card.querySelector('[name="endTz"]').value;
+            var startGmt = convertToGmt(startDate.value, startTime.value, startTz);
+            var endGmt = convertToGmt(endDate.value, endTime.value, endTz);
+            if (new Date(endGmt.isoUtc) <= new Date(startGmt.isoUtc)) {
+              errors.push('Trip ' + num + ': End date/time must be after start date/time');
+              endDate.classList.add('field-error');
+              endTime.classList.add('field-error');
+            }
+          }
+        }
+
+        return errors;
+      }
+
+      // ── Generate QR ────────────────────────────────────────────────────
+      document.getElementById('generate-btn').addEventListener('click', function() {
+        var errors = validate();
+        var summaryEl = document.getElementById('validation-summary');
+
+        if (errors.length > 0) {
+          summaryEl.innerHTML = errors.join('<br>');
+          summaryEl.style.display = 'block';
+          summaryEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          document.getElementById('qr-output').style.display = 'none';
+          document.getElementById('print-btn').style.display = 'none';
+          return;
+        }
+
+        summaryEl.style.display = 'none';
+
+        // Collect trip data
+        var trips = [];
+        var cards = entriesContainer.querySelectorAll('.entry-card');
+
+        for (var i = 0; i < cards.length; i++) {
+          var card = cards[i];
+          var startDate = card.querySelector('[name="startDate"]').value;
+          var startTime = card.querySelector('[name="startTime"]').value;
+          var startTz = card.querySelector('[name="startTz"]').value;
+          var endDate = card.querySelector('[name="endDate"]').value;
+          var endTime = card.querySelector('[name="endTime"]').value;
+          var endTz = card.querySelector('[name="endTz"]').value;
+
+          var startGmt = convertToGmt(startDate, startTime, startTz);
+          var endGmt = convertToGmt(endDate, endTime, endTz);
+
+          var trip = {
+            startDateGmt: startGmt.isoUtc,
+            endDateGmt: endGmt.isoUtc,
+            startTzOffset: startGmt.offsetString,
+            endTzOffset: endGmt.offsetString,
+            departurePort: card.querySelector('[name="departurePort"]').value.trim(),
+            arrivalPort: card.querySelector('[name="arrivalPort"]').value.trim(),
+            bodyOfWater: card.querySelector('[name="bodyOfWater"]').value.trim()
+          };
+
+          var waterType = card.querySelector('[name="waterType"]').value;
+          if (waterType) trip.waterType = waterType;
+
+          var crewRole = card.querySelector('[name="crewRole"]').value;
+          if (crewRole) trip.crewRole = crewRole;
+
+          var masterName = card.querySelector('[name="masterName"]').value.trim();
+          if (masterName) trip.masterName = masterName;
+
+          trips.push(trip);
+        }
+
+        // Encode
+        try {
+          var payloads = QrProtocol.encodePayload('trip', trips);
+          var qrOutput = document.getElementById('qr-output');
+          ToolsShared.renderQrCodes(qrOutput, payloads);
+          document.getElementById('print-btn').style.display = 'inline-block';
+          qrOutput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch (err) {
+          alert('Error generating QR code: ' + err.message);
+        }
+      });
+
+      // ── Print ──────────────────────────────────────────────────────────
+      document.getElementById('print-btn').addEventListener('click', function() {
+        ToolsShared.printQrCodes();
+      });
+
+    })();
+    </script>
+</body>
+</html>
