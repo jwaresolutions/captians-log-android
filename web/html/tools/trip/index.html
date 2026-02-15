@@ -184,12 +184,14 @@
                 '<select name="startTz">' + tzOptionsHtml + '</select>' +
               '</div>' +
             '</div>' +
-            '<div class="form-group port-group">' +
+            '<div class="form-group">' +
               '<label>Departure Port *</label>' +
-              '<div class="port-input-row">' +
-                '<input type="text" name="departurePort" placeholder="e.g. Miami, FL">' +
-                '<button type="button" class="btn-copy-port" data-copy-from="arrivalPort" data-copy-to="departurePort" title="Copy from Arrival Port">&darr;</button>' +
-              '</div>' +
+              '<input type="text" name="departurePort" placeholder="e.g. Miami, FL">' +
+            '</div>' +
+            '<div class="form-group checkbox-group">' +
+              '<label class="checkbox-label">' +
+                '<input type="checkbox" name="samePort"> Arrival port same as departure' +
+              '</label>' +
             '</div>' +
 
             '<div class="form-section-label">Arrival</div>' +
@@ -207,12 +209,9 @@
                 '<select name="endTz">' + tzOptionsHtml + '</select>' +
               '</div>' +
             '</div>' +
-            '<div class="form-group port-group">' +
+            '<div class="form-group">' +
               '<label>Arrival Port *</label>' +
-              '<div class="port-input-row">' +
-                '<input type="text" name="arrivalPort" placeholder="e.g. Nassau, Bahamas">' +
-                '<button type="button" class="btn-copy-port" data-copy-from="departurePort" data-copy-to="arrivalPort" title="Copy from Departure Port">&uarr;</button>' +
-              '</div>' +
+              '<input type="text" name="arrivalPort" placeholder="e.g. Nassau, Bahamas">' +
             '</div>' +
 
             '<div class="form-section-label">Details</div>' +
@@ -275,18 +274,27 @@
         entriesContainer.appendChild(card);
         trackDirty(card);
 
-        // Port copy buttons
-        var copyBtns = card.querySelectorAll('.btn-copy-port');
-        for (var c = 0; c < copyBtns.length; c++) {
-          copyBtns[c].addEventListener('click', function() {
-            var fromField = this.closest('.entry-card').querySelector('[name="' + this.getAttribute('data-copy-from') + '"]');
-            var toField = this.closest('.entry-card').querySelector('[name="' + this.getAttribute('data-copy-to') + '"]');
-            if (fromField && toField && fromField.value.trim()) {
-              toField.value = fromField.value;
-              formDirty = true;
-            }
-          });
-        }
+        // Same port checkbox
+        var samePortCheckbox = card.querySelector('[name="samePort"]');
+        var departureInput = card.querySelector('[name="departurePort"]');
+        var arrivalInput = card.querySelector('[name="arrivalPort"]');
+
+        samePortCheckbox.addEventListener('change', function() {
+          if (this.checked) {
+            arrivalInput.value = departureInput.value;
+            arrivalInput.disabled = true;
+            formDirty = true;
+          } else {
+            arrivalInput.disabled = false;
+          }
+        });
+
+        // Keep arrival in sync when departure changes and checkbox is checked
+        departureInput.addEventListener('input', function() {
+          if (samePortCheckbox.checked) {
+            arrivalInput.value = departureInput.value;
+          }
+        });
 
         // Crew role → master name toggle
         var crewRoleSelect = card.querySelector('[name="crewRole"]');
