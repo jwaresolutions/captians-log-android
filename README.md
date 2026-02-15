@@ -91,6 +91,38 @@ app/src/main/java/com/boattracking/
 
 ## Features
 
+### GPS Trip Tracking
+Record every nautical mile with precise GPS tracking. Capture routes, speed, distance, and trip duration automatically. View comprehensive trip history and statistics. Configurable tracking intervals with smart stop-point detection (5+ minutes in 45-foot radius).
+
+### Nautical Charts & Maps
+Interactive maps with multiple chart providers: NOAA nautical charts (US coastal), GEBCO bathymetry (global ocean depth), and OpenSeaMap overlays (buoys, lights, marks). View real-time tide stations, NOAA weather alerts, marine weather conditions, wave data, and vessel traffic (AIS). Save and categorize custom locations (marinas, fishing spots, anchorages, hazards).
+
+### Photo Logs
+Capture and attach photos to trips. Build a visual record of your adventures. Photos sync automatically over WiFi with smart 7-day local retention.
+
+### Crew Management
+Share trips with crew via QR codes. Track crew members across voyages. Captain and crew role differentiation.
+
+### Maintenance Tracking
+Create maintenance templates and schedules. Track overdue, upcoming, and completed tasks. Keep a full service history for your vessel.
+
+### Sensor Integration
+Connect Bluetooth sensors (Arduino-compatible) for real-time environmental data: temperature, barometric pressure, humidity. Monitor conditions while underway.
+
+### Captain's License Tracking
+Track sea time toward licensing requirements. View days logged, progress indicators, and estimated completion dates.
+
+### Notes & Todos
+Organize notes by type (personal, technical, safety). Manage boat-specific task lists. Search and filter your records.
+
+### Multi-Boat Support
+Manage multiple vessels from a single app. Share boat configurations via QR codes. Set active boat for trip recording.
+
+### Offline-First with Cloud Sync
+Works fully offline with local SQLite storage. Automatic sync when connected. Conflict detection and resolution. Secure JWT authentication and certificate pinning.
+
+## Technical Details
+
 ### Dual Connection Mode
 The app supports two connection endpoints:
 - **Local Connection** (optional): Direct connection on local network
@@ -151,6 +183,42 @@ The app supports multiple nautical data providers, configurable in Settings. Pro
 |----------|--------|
 | **USCG NAVCEN / Wrecks & Obstructions** | Original USCG GeoJSON URL was dead (404). Switched to NOAA AWOIS ArcGIS service, but it only contained 359 records concentrated off the Carolina coast with zero West Coast coverage. Data too sparse to be useful. |
 | **OpenSeaMap Depth** | Depth sounding tile overlay. Tile server at depth.openseamap.org and t1.openseamap.org/depth both return empty transparent PNGs (334 bytes) for every tile globally. Service is effectively dead. |
+
+## Website
+
+The `web/` directory contains the static website hosted at [boat.jware.dev](https://boat.jware.dev).
+
+### Pages
+- **Home** (`/`) — Landing page with app overview, feature highlights, and download CTA
+- **App Features** (`/features/`) — Detailed breakdown of all app capabilities
+- **Privacy Policy** (`/privacy/`) — Privacy policy covering data handling, permissions, and sync
+
+### Structure
+```
+web/
+├── html/
+│   ├── index.html              # Landing page
+│   ├── shared.css              # Shared styles (dark theme, animations)
+│   ├── starfield.js            # Animated starfield background
+│   ├── captains-log-logo.png   # App logo
+│   ├── features/
+│   │   └── index.html          # App features page
+│   └── privacy/
+│       └── index.html          # Privacy policy
+├── Dockerfile                  # nginx static site container
+└── nginx.conf                  # nginx configuration
+```
+
+### Local Development
+```bash
+docker build ./web -t captains-log-web:test
+docker run -d --name preview-web -p 8080:80 captains-log-web:test
+# Visit http://localhost:8080
+docker rm -f preview-web  # cleanup
+```
+
+### CI/CD
+Pushing to `main` with changes in `web/` triggers the GitHub Actions workflow (`.github/workflows/web-ci-cd.yml`) which builds and pushes the Docker image to GHCR.
 
 ## Building
 
