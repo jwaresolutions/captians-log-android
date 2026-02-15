@@ -83,6 +83,8 @@ input[type="date"],
 input[type="time"],
 input[type="number"],
 input[type="email"],
+input[type="tel"],
+input[type="datetime-local"],
 select,
 textarea {
     width: 100%;
@@ -96,16 +98,50 @@ textarea {
     transition: border-color 0.2s ease;
 }
 
+/* Dark theme for date/time pickers */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+    color-scheme: dark;
+}
+
+/* Fix invisible date/time picker icons (calendar, clock) */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
 input:focus,
 select:focus,
 textarea:focus {
     outline: none;
     border-color: rgba(255, 153, 51, 0.6);
+    box-shadow: 0 0 0 2px rgba(255, 153, 51, 0.2);
 }
 
 input::placeholder,
 textarea::placeholder {
     color: rgba(255, 255, 255, 0.25);
+}
+
+/* Disabled state */
+input:disabled,
+select:disabled,
+textarea:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Autofill override - prevent white background on autofill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #e0e0e0;
+    -webkit-box-shadow: 0 0 0px 1000px #1a1a1a inset;
+    transition: background-color 5000s ease-in-out 0s;
 }
 
 textarea {
