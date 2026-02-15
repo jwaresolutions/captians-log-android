@@ -7,7 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -92,8 +92,8 @@ fun AppTopBar(
             // QR Import button
             IconButton(onClick = onQrImportClick) {
                 Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "Import via QR",
+                    imageVector = Icons.Filled.QrCodeScanner,
+                    contentDescription = "Scan QR Code",
                     tint = if (qrImportActive) Color.Yellow else Color.White
                 )
             }

@@ -37,14 +37,15 @@ fun ScanBoatScreen(
     onBack: () -> Unit,
     onBoatImported: (String) -> Unit = {},
     modifier: Modifier = Modifier,
-    database: AppDatabase
+    database: AppDatabase,
+    preScannedData: com.captainslog.sharing.models.BoatShareData? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     var hasCameraPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(
+            preScannedData != null || ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.CAMERA
             ) == PackageManager.PERMISSION_GRANTED
@@ -52,8 +53,8 @@ fun ScanBoatScreen(
     }
 
     var showConfirmationDialog by remember { mutableStateOf(false) }
-    var scannedBoatName by remember { mutableStateOf("") }
-    var scannedData by remember { mutableStateOf<com.captainslog.sharing.models.BoatShareData?>(null) }
+    var scannedBoatName by remember { mutableStateOf(preScannedData?.data?.name ?: "") }
+    var scannedData by remember { mutableStateOf(preScannedData) }
     var isProcessing by remember { mutableStateOf(false) }
     var scanError by remember { mutableStateOf<String?>(null) }
     var importResult by remember { mutableStateOf<ImportResult?>(null) }
@@ -64,8 +65,15 @@ fun ScanBoatScreen(
         hasCameraPermission = isGranted
     }
 
+    // If pre-scanned data provided, show confirmation immediately
+    LaunchedEffect(preScannedData) {
+        if (preScannedData != null) {
+            showConfirmationDialog = true
+        }
+    }
+
     LaunchedEffect(Unit) {
-        if (!hasCameraPermission) {
+        if (!hasCameraPermission && preScannedData == null) {
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }

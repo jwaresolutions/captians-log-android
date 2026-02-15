@@ -11,7 +11,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.QrCode2
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
@@ -78,12 +77,6 @@ fun BoatListScreen(
             TopAppBar(
                 title = { Text("Boats") },
                 actions = {
-                    IconButton(onClick = onScanBoatQR) {
-                        Icon(
-                            Icons.Default.QrCodeScanner,
-                            contentDescription = "Scan boat QR code"
-                        )
-                    }
                     com.captainslog.ui.components.CompactSyncStatusIndicator(
                         onSyncClick = { viewModel.performFullSync() },
                         database = database

@@ -19,8 +19,16 @@ import com.captainslog.database.AppDatabase
 import com.captainslog.database.entities.ImportedQrEntity
 import com.captainslog.qr.QrAssembler
 import com.captainslog.qr.QrProtocol
+import com.captainslog.security.SecurePreferences
+import com.captainslog.sharing.BoatShareGenerator
+import com.captainslog.sharing.TripCrewShareGenerator
+import com.captainslog.sharing.models.BoatShareData
+import com.captainslog.sharing.models.TripCrewShareData
+import com.captainslog.sharing.models.CrewResponseData
 import com.captainslog.ui.components.CameraPreview
+import com.google.gson.Gson
 import com.google.gson.JsonElement
+import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -32,13 +40,30 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Screen for scanning QR codes to import data into Captain's Log.
+ * Represents the result of scanning and identifying a QR code.
+ */
+sealed class UnifiedQrResult {
+    /** Web import QR (trip or boat from web form) */
+    data class WebImport(val type: String, val data: JsonElement, val qrId: String, val generatedAt: String) : UnifiedQrResult()
+    /** Device-to-device boat share */
+    data class BoatShare(val data: BoatShareData) : UnifiedQrResult()
+    /** Crew join invite (captain's QR scanned by crew) */
+    data class CrewJoin(val data: TripCrewShareData) : UnifiedQrResult()
+    /** Crew response (crew's QR scanned by captain) */
+    data class CrewResponse(val data: CrewResponseData) : UnifiedQrResult()
+}
+
+/**
+ * Unified QR scanner screen that detects QR type automatically and routes appropriately.
  *
- * Handles multi-QR sequential scanning, version validation, age warnings,
- * and duplicate detection for data imported from web forms.
+ * Handles:
+ * - Web import QR codes (multi-QR sequential scanning with version validation)
+ * - Device-to-device boat sharing
+ * - Crew join invites
+ * - Crew responses
  *
  * @param onBack Callback when back button is pressed
- * @param onImportReady Callback when QR data is successfully decoded and ready to import
+ * @param onScanResult Callback when QR data is successfully identified
  * @param database Database instance for duplicate checking
  * @param modifier Optional modifier for the screen
  */
@@ -46,7 +71,7 @@ import java.util.Locale
 @Composable
 fun QrImportScannerScreen(
     onBack: () -> Unit,
-    onImportReady: (type: String, data: JsonElement, qrId: String, generatedAt: String) -> Unit,
+    onScanResult: (UnifiedQrResult) -> Unit,
     database: AppDatabase,
     modifier: Modifier = Modifier
 ) {
@@ -111,11 +136,13 @@ fun QrImportScannerScreen(
                 )) {
                     is QrProtocol.QrDecodeResult.Success -> {
                         // Success - pass to callback
-                        onImportReady(
-                            decodeResult.type,
-                            decodeResult.data,
-                            decodeResult.id,
-                            decodeResult.generatedAt
+                        onScanResult(
+                            UnifiedQrResult.WebImport(
+                                type = decodeResult.type,
+                                data = decodeResult.data,
+                                qrId = decodeResult.id,
+                                generatedAt = decodeResult.generatedAt
+                            )
                         )
                         assembler.reset()
                         assemblyProgress = null
@@ -199,22 +226,61 @@ fun QrImportScannerScreen(
     }
 
     /**
-     * Handle QR code scan from camera
+     * Handle QR code scan from camera.
+     * Uses type-field-first routing for device QR codes, falls back to QrProtocol for web import.
      */
     fun handleQrScan(qrContent: String) {
         if (isProcessing) return
 
         scope.launch {
             try {
-                // Parse envelope
+                val gson = Gson()
+                val securePreferences = SecurePreferences(context)
+
+                // Try to read "type" field from JSON for device-to-device routing
+                val typeField = try {
+                    val jsonObj = JsonParser.parseString(qrContent).asJsonObject
+                    jsonObj.get("type")?.asString
+                } catch (e: Exception) {
+                    null
+                }
+
+                when (typeField) {
+                    "boat" -> {
+                        val boatGenerator = BoatShareGenerator(securePreferences)
+                        val boatShare = boatGenerator.parseQrData(qrContent)
+                        if (boatShare != null) {
+                            onScanResult(UnifiedQrResult.BoatShare(boatShare))
+                            return@launch
+                        }
+                    }
+                    "crew_join" -> {
+                        val crewGenerator = TripCrewShareGenerator(securePreferences)
+                        val crewJoin = crewGenerator.parseQrData(qrContent)
+                        if (crewJoin != null) {
+                            onScanResult(UnifiedQrResult.CrewJoin(crewJoin))
+                            return@launch
+                        }
+                    }
+                    "crew_response" -> {
+                        val crewGenerator = TripCrewShareGenerator(securePreferences)
+                        val crewResponse = crewGenerator.parseCrewResponse(qrContent)
+                        if (crewResponse != null) {
+                            onScanResult(UnifiedQrResult.CrewResponse(crewResponse))
+                            return@launch
+                        }
+                    }
+                }
+
+                // Fall back to QrProtocol envelope (web import with part/total fields)
                 val envelope = QrProtocol.parseEnvelope(qrContent)
-                if (envelope == null) {
-                    scanError = "Invalid QR code"
+                if (envelope != null) {
+                    processEnvelope(envelope)
                     return@launch
                 }
 
-                // Process through validation pipeline
-                processEnvelope(envelope)
+                // No parser matched
+                scanError = "Unrecognized QR code format"
             } catch (e: Exception) {
                 scanError = "Failed to process QR code: ${e.message}"
                 isProcessing = false
@@ -238,7 +304,7 @@ fun QrImportScannerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Import via QR") },
+                title = { Text("Scan QR Code") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")

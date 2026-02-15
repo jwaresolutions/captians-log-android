@@ -28,7 +28,10 @@ data class CrewMemberData(
 )
 
 data class CrewResponseData(
+    @SerializedName("v") val version: Int = 1,
     @SerializedName("type") val type: String = "crew_response",
+    @SerializedName("origin") val origin: String = "",
+    @SerializedName("ts") val timestamp: Long = 0,
     @SerializedName("tripId") val tripId: String,
     @SerializedName("deviceId") val deviceId: String,
     @SerializedName("displayName") val displayName: String,

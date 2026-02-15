@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -111,37 +110,21 @@ fun TripListScreen(
             }
         }
         
-        // FAB column
-        Column(
-            horizontalAlignment = Alignment.End,
+        // Start Trip FAB
+        FloatingActionButton(
+            onClick = { showStartDialog = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            containerColor = if (hasActiveTrip)
+                MaterialTheme.colorScheme.tertiary
+            else
+                MaterialTheme.colorScheme.primary
         ) {
-            // Join Trip FAB
-            SmallFloatingActionButton(
-                onClick = onJoinTrip,
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            ) {
-                Icon(
-                    imageVector = Icons.Default.QrCodeScanner,
-                    contentDescription = "Join a Trip"
-                )
-            }
-            // Start Trip FAB
-            FloatingActionButton(
-                onClick = { showStartDialog = true },
-                containerColor = if (hasActiveTrip)
-                    MaterialTheme.colorScheme.tertiary
-                else
-                    MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = if (hasActiveTrip) Icons.Default.Refresh else Icons.Default.Add,
-                    contentDescription = if (hasActiveTrip) "View Active Trip" else "Start New Trip"
-                )
-            }
+            Icon(
+                imageVector = if (hasActiveTrip) Icons.Default.Refresh else Icons.Default.Add,
+                contentDescription = if (hasActiveTrip) "View Active Trip" else "Start New Trip"
+            )
         }
     }
     
@@ -456,12 +439,6 @@ fun EmptyTripList(
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
             Text("Start New Trip")
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        OutlinedButton(onClick = onJoinTrip) {
-            Icon(Icons.Default.QrCodeScanner, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Join a Trip")
         }
     }
 }

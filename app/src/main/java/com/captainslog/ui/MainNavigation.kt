@@ -31,8 +31,14 @@ import com.captainslog.ui.todos.TodoNavigation
 import com.captainslog.ui.qr.BoatImportReviewScreen
 import com.captainslog.ui.qr.QrImportScannerScreen
 import com.captainslog.ui.qr.TripImportReviewScreen
+import com.captainslog.ui.qr.UnifiedQrResult
+import com.captainslog.ui.sharing.ScanBoatScreen
+import com.captainslog.ui.sharing.ScanTripCrewScreen
 import com.captainslog.ui.trips.TripNavigation
 import com.captainslog.qr.QrTripImporter
+import com.captainslog.sharing.models.BoatShareData
+import com.captainslog.sharing.models.TripCrewShareData
+import com.captainslog.sharing.models.CrewResponseData
 import com.google.gson.JsonElement
 
 /**
@@ -262,10 +268,11 @@ fun MainNavigation(
                 // Internal QR import navigation
                 var qrImportScreen by remember { mutableStateOf<QrImportScreen>(QrImportScreen.Scanner) }
                 // Store decoded data for passing between screens
-                var importType by remember { mutableStateOf<String?>(null) }
                 var importData by remember { mutableStateOf<JsonElement?>(null) }
                 var importQrId by remember { mutableStateOf<String?>(null) }
                 var importGeneratedAt by remember { mutableStateOf<String?>(null) }
+                var boatShareData by remember { mutableStateOf<BoatShareData?>(null) }
+                var crewJoinData by remember { mutableStateOf<TripCrewShareData?>(null) }
 
                 // Handle back within QR import flow
                 BackHandler(enabled = qrImportScreen != QrImportScreen.Scanner) {
@@ -276,12 +283,29 @@ fun MainNavigation(
                     QrImportScreen.Scanner -> {
                         QrImportScannerScreen(
                             onBack = { currentScreen = CurrentScreen.Tab(selectedTab) },
-                            onImportReady = { type, data, qrId, generatedAt ->
-                                importType = type
-                                importData = data
-                                importQrId = qrId
-                                importGeneratedAt = generatedAt
-                                qrImportScreen = if (type == "trip") QrImportScreen.TripReview else QrImportScreen.BoatReview
+                            onScanResult = { result ->
+                                when (result) {
+                                    is UnifiedQrResult.WebImport -> {
+                                        importData = result.data
+                                        importQrId = result.qrId
+                                        importGeneratedAt = result.generatedAt
+                                        qrImportScreen = if (result.type == "trip") QrImportScreen.TripReview else QrImportScreen.BoatReview
+                                    }
+                                    is UnifiedQrResult.BoatShare -> {
+                                        boatShareData = result.data
+                                        qrImportScreen = QrImportScreen.DeviceBoatImport
+                                    }
+                                    is UnifiedQrResult.CrewJoin -> {
+                                        crewJoinData = result.data
+                                        qrImportScreen = QrImportScreen.CrewJoin
+                                    }
+                                    is UnifiedQrResult.CrewResponse -> {
+                                        // Crew responses are typically handled during active sharing sessions.
+                                        // For now, show the scanner again - this case shouldn't normally occur
+                                        // from the unified scanner since captains use ShareTripCrewScreen.
+                                        qrImportScreen = QrImportScreen.Scanner
+                                    }
+                                }
                             },
                             database = viewModel.database,
                             modifier = Modifier.padding(paddingValues)
@@ -314,6 +338,24 @@ fun MainNavigation(
                             onImportComplete = { currentScreen = CurrentScreen.Tab(selectedTab) },
                             database = viewModel.database,
                             modifier = Modifier.padding(paddingValues)
+                        )
+                    }
+                    QrImportScreen.DeviceBoatImport -> {
+                        ScanBoatScreen(
+                            onBack = { qrImportScreen = QrImportScreen.Scanner },
+                            onBoatImported = { currentScreen = CurrentScreen.Tab(selectedTab) },
+                            database = viewModel.database,
+                            modifier = Modifier.padding(paddingValues),
+                            preScannedData = boatShareData
+                        )
+                    }
+                    QrImportScreen.CrewJoin -> {
+                        ScanTripCrewScreen(
+                            onBack = { qrImportScreen = QrImportScreen.Scanner },
+                            onTripJoined = { currentScreen = CurrentScreen.Tab(selectedTab) },
+                            database = viewModel.database,
+                            modifier = Modifier.padding(paddingValues),
+                            preScannedData = crewJoinData
                         )
                     }
                 }
@@ -354,4 +396,6 @@ private sealed class QrImportScreen {
     object Scanner : QrImportScreen()
     object TripReview : QrImportScreen()
     object BoatReview : QrImportScreen()
+    object DeviceBoatImport : QrImportScreen()
+    object CrewJoin : QrImportScreen()
 }

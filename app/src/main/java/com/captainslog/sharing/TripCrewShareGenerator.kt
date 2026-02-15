@@ -81,6 +81,9 @@ class TripCrewShareGenerator(
 
     fun generateCrewResponseJson(deviceId: String, displayName: String, tripId: String): String {
         val data = CrewResponseData(
+            version = 1,
+            origin = "device:$deviceId",
+            timestamp = System.currentTimeMillis(),
             tripId = tripId,
             deviceId = deviceId,
             displayName = displayName,
