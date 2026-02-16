@@ -32,12 +32,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Create Pages project if needed
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create captains-log --production-branch=main
+        continue-on-error: true
+
       - name: Deploy to Cloudflare Pages (Staging)
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy web/html --project-name=captains-log --branch=staging
+          command: pages deploy web/html --project-name=captains-log --branch=staging --commit-dirty=true
 
   deploy-production:
     name: Deploy to Production
@@ -53,4 +61,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy web/html --project-name=captains-log --branch=main
+          command: pages deploy web/html --project-name=captains-log --branch=main --commit-dirty=true
