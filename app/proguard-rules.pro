@@ -32,3 +32,7 @@
 -keep class com.captainslog.database.entities.** { *; }
 -keep class com.captainslog.network.models.** { *; }
 -keep class com.captainslog.sharing.models.** { *; }
+
+# PDFBox optional dependencies
+-dontwarn com.gemalto.jp2.JP2Decoder
+-dontwarn com.gemalto.jp2.JP2Encoder
