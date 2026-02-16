@@ -3,12 +3,11 @@ package com.captainslog.ui
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.DirectionsBoat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -17,15 +16,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.captainslog.mode.AppModeManager
 import com.captainslog.viewmodel.MainNavigationViewModel
 import com.captainslog.ui.components.BreadcrumbItem
 import com.captainslog.ui.home.HomeScreen
 import com.captainslog.ui.license.LicenseProgressScreen
-import com.captainslog.ui.maintenance.MaintenanceNavigation
 import com.captainslog.ui.map.MapScreen
 import com.captainslog.ui.notes.NotesNavigation
-import com.captainslog.ui.sensors.SensorManagementScreen
 import com.captainslog.ui.settings.SettingsScreen
 import com.captainslog.ui.todos.TodoNavigation
 import com.captainslog.ui.qr.BoatImportReviewScreen
@@ -34,6 +30,7 @@ import com.captainslog.ui.qr.TripImportReviewScreen
 import com.captainslog.ui.qr.UnifiedQrResult
 import com.captainslog.ui.sharing.ScanBoatScreen
 import com.captainslog.ui.sharing.ScanTripCrewScreen
+import com.captainslog.ui.boats.BoatListScreen
 import com.captainslog.ui.trips.TripNavigation
 import com.captainslog.qr.QrTripImporter
 import com.captainslog.sharing.models.BoatShareData
@@ -43,18 +40,13 @@ import com.google.gson.JsonElement
 
 /**
  * Main navigation structure with bottom navigation bar.
- * Tab visibility is conditional based on app mode:
- * - Standalone mode: Maintenance and Sensors tabs are hidden
- * - Connected mode: All tabs are visible
  * Top bar shows breadcrumb trail.
  */
 @Composable
 fun MainNavigation(
-    onSignOut: () -> Unit = {},
     viewModel: MainNavigationViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val isStandalone = viewModel.appModeManager.isStandalone()
 
     var selectedTab by remember { mutableStateOf(NavigationTab.Home) }
 
@@ -67,24 +59,17 @@ fun MainNavigation(
     var childBackHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
 
     // Bottom nav tabs (Home excluded - accessed via "Captain's Log" title)
-    // In standalone mode, also exclude Maintenance and Sensors tabs
     val availableTabs = NavigationTab.entries.filter { tab ->
-        when {
-            tab == NavigationTab.Home -> false
-            tab == NavigationTab.Maintenance && isStandalone -> false
-            tab == NavigationTab.Sensors && isStandalone -> false
-            else -> true
-        }
+        tab != NavigationTab.Home
     }
 
     // Build full breadcrumb list: top-level label + nested breadcrumbs
     val topLevelLabel = when (val screen = currentScreen) {
         is CurrentScreen.Tab -> when (screen.tab) {
+            NavigationTab.Boats -> "Boats"
             NavigationTab.Home -> "Captain's Log"
             NavigationTab.Trips -> "Trips"
-            NavigationTab.Maintenance -> "Maintenance"
             NavigationTab.Map -> "Map"
-            NavigationTab.Sensors -> "Sensors"
             NavigationTab.License -> "License Progress"
         }
         CurrentScreen.Notes -> "Notes"
@@ -142,23 +127,9 @@ fun MainNavigation(
                         label = { Text(tab.label) },
                         selected = currentScreen is CurrentScreen.Tab && (currentScreen as CurrentScreen.Tab).tab == tab,
                         onClick = {
-                            // Guard against navigating to hidden tabs
-                            val isTabAvailable = when {
-                                tab == NavigationTab.Maintenance && isStandalone -> false
-                                tab == NavigationTab.Sensors && isStandalone -> false
-                                else -> true
-                            }
-
-                            if (isTabAvailable) {
-                                selectedTab = tab
-                                nestedBreadcrumbs = emptyList()
-                                currentScreen = CurrentScreen.Tab(tab)
-                            } else {
-                                // Redirect to Home if tab is not available
-                                selectedTab = NavigationTab.Home
-                                nestedBreadcrumbs = emptyList()
-                                currentScreen = CurrentScreen.Tab(NavigationTab.Home)
-                            }
+                            selectedTab = tab
+                            nestedBreadcrumbs = emptyList()
+                            currentScreen = CurrentScreen.Tab(tab)
                         }
                     )
                 }
@@ -179,6 +150,49 @@ fun MainNavigation(
         when (val screen = currentScreen) {
             is CurrentScreen.Tab -> {
                 when (screen.tab) {
+                    NavigationTab.Boats -> {
+                        // Boats tab with sharing sub-screens
+                        var boatShareBoatId by remember { mutableStateOf<String?>(null) }
+                        var boatShowScanQR by remember { mutableStateOf(false) }
+
+                        LaunchedEffect(boatShareBoatId, boatShowScanQR) {
+                            val crumbs = when {
+                                boatShareBoatId != null -> listOf(BreadcrumbItem("Share Boat"))
+                                boatShowScanQR -> listOf(BreadcrumbItem("Scan Boat QR"))
+                                else -> emptyList()
+                            }
+                            val back: (() -> Unit)? = when {
+                                boatShareBoatId != null -> { { boatShareBoatId = null } }
+                                boatShowScanQR -> { { boatShowScanQR = false } }
+                                else -> null
+                            }
+                            nestedBreadcrumbs = crumbs
+                            childBackHandler = back
+                        }
+
+                        if (boatShareBoatId != null) {
+                            com.captainslog.ui.sharing.ShareBoatScreen(
+                                boatId = boatShareBoatId!!,
+                                onBack = { boatShareBoatId = null },
+                                modifier = Modifier.padding(paddingValues),
+                                database = viewModel.database
+                            )
+                        } else if (boatShowScanQR) {
+                            ScanBoatScreen(
+                                onBack = { boatShowScanQR = false },
+                                onBoatImported = { boatShowScanQR = false },
+                                modifier = Modifier.padding(paddingValues),
+                                database = viewModel.database
+                            )
+                        } else {
+                            BoatListScreen(
+                                modifier = Modifier.padding(paddingValues),
+                                database = viewModel.database,
+                                onShareBoat = { boatId -> boatShareBoatId = boatId },
+                                onScanBoatQR = { boatShowScanQR = true }
+                            )
+                        }
+                    }
                     NavigationTab.Home -> {
                         HomeScreen(
                             modifier = Modifier.padding(paddingValues),
@@ -206,20 +220,8 @@ fun MainNavigation(
                             }
                         )
                     }
-                    NavigationTab.Maintenance -> {
-                        MaintenanceNavigation(
-                            modifier = Modifier.padding(paddingValues),
-                            onBreadcrumbChanged = { crumbs, backToRoot ->
-                                nestedBreadcrumbs = crumbs
-                                childBackHandler = backToRoot
-                            }
-                        )
-                    }
                     NavigationTab.Map -> {
                         MapScreen(modifier = Modifier.padding(paddingValues))
-                    }
-                    NavigationTab.Sensors -> {
-                        SensorManagementScreen(modifier = Modifier.padding(paddingValues))
                     }
                     NavigationTab.License -> {
                         LicenseProgressScreen(modifier = Modifier.padding(paddingValues))
@@ -255,13 +257,11 @@ fun MainNavigation(
                         nestedBreadcrumbs = emptyList()
                         currentScreen = CurrentScreen.Todos
                     },
-                    onSignOut = onSignOut,
                     onBreadcrumbChanged = { crumbs, backToRoot ->
                         nestedBreadcrumbs = crumbs
                         childBackHandler = backToRoot
                     },
-                    database = viewModel.database,
-                    appModeManager = viewModel.appModeManager
+                    database = viewModel.database
                 )
             }
             CurrentScreen.QrImport -> {
@@ -366,14 +366,12 @@ fun MainNavigation(
 
 /**
  * Enum representing the main navigation tabs.
- * Visibility is conditional based on app mode (see MainNavigation).
  */
 enum class NavigationTab(val label: String, val icon: ImageVector) {
+    Boats("Boats", Icons.Filled.DirectionsBoat),
     Home("Home", Icons.Filled.Home),
     Trips("Trips", Icons.Filled.List),
-    Maintenance("Maintenance", Icons.Filled.Build),
     Map("Map", Icons.Filled.LocationOn),
-    Sensors("Sensors", Icons.Filled.Info),
     License("License", Icons.Filled.Star)
 }
 

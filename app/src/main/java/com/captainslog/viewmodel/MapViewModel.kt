@@ -158,8 +158,6 @@ class MapViewModel @Inject constructor(
                     }
                 }
 
-                // Sync from API
-                markedLocationRepository.syncMarkedLocationsFromApi()
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading marked locations", e)
                 _uiState.value = _uiState.value.copy(

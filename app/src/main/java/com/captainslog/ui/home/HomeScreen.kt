@@ -141,7 +141,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Navigate using the tabs below to manage your trips, maintenance, and more.",
+                text = "Navigate using the tabs below to manage your boats, trips, and more.",
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = Color(0xFF99CCFF).copy(alpha = 0.8f)

@@ -94,7 +94,7 @@ fun ShareTripCrewScreen(
         val displayName = securePreferences.displayName
         if (displayName == null) {
             showDisplayNameDialog = true
-            displayNameInput = securePreferences.username ?: ""
+            displayNameInput = securePreferences.displayName ?: ""
         }
     }
 
@@ -132,7 +132,7 @@ fun ShareTripCrewScreen(
 
             // Add captain to crew_members if not already present
             val deviceId = securePreferences.deviceId
-            val captainName = securePreferences.displayName ?: securePreferences.username ?: "Captain"
+            val captainName = securePreferences.displayName ?: securePreferences.displayName ?: "Captain"
 
             val existingCaptain = withContext(Dispatchers.IO) {
                 database.crewMemberDao().getCrewForTripSync(tripId)
@@ -408,7 +408,7 @@ fun ShareTripCrewScreen(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "Captain: ${securePreferences.displayName ?: securePreferences.username}",
+                                    text = "Captain: ${securePreferences.displayName ?: securePreferences.displayName}",
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.primary
                                 )

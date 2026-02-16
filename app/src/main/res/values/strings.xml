@@ -21,9 +21,8 @@
     
     <!-- Permissions -->
     <string name="permission_location_rationale">Location permission is required to track your trips</string>
-    <string name="permission_bluetooth_rationale">Bluetooth permission is required to connect to sensors</string>
-    <string name="permission_camera_rationale">Camera permission is required to take photos</string>
-    <string name="permission_notification_rationale">Notification permission is required for trip tracking and maintenance reminders</string>
+    <string name="permission_camera_rationale">Camera permission is required to scan QR codes</string>
+    <string name="permission_notification_rationale">Notification permission is required for trip tracking</string>
     
     <!-- Errors -->
     <string name="error_network">Network error. Please check your connection.</string>

@@ -3,7 +3,6 @@ package com.captainslog.viewmodel
 import androidx.lifecycle.viewModelScope
 import com.captainslog.database.entities.BoatEntity
 import com.captainslog.repository.BoatRepository
-import com.captainslog.sync.SyncOrchestrator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -16,8 +15,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class BoatViewModel @Inject constructor(
-    private val repository: BoatRepository,
-    private val syncOrchestrator: SyncOrchestrator
+    private val repository: BoatRepository
 ) : BaseViewModel() {
 
     /**
@@ -92,35 +90,6 @@ class BoatViewModel @Inject constructor(
             if (result.isFailure) {
                 throw result.exceptionOrNull() ?: Exception("Failed to set active boat")
             }
-        }
-    }
-
-    /**
-     * Sync boats from API
-     */
-    fun syncBoatsFromApi() {
-        launchWithErrorHandling {
-            repository.syncBoatsFromApi()
-        }
-    }
-
-    /**
-     * Sync boats to API
-     */
-    fun syncBoatsToApi() {
-        launchWithErrorHandling {
-            repository.syncBoatsToApi()
-        }
-    }
-
-    /**
-     * Perform full bidirectional sync using comprehensive sync manager
-     */
-    fun performFullSync() {
-        launchWithErrorHandling(
-            onSuccess = { setSuccess("Comprehensive sync started") }
-        ) {
-            syncOrchestrator.syncAll()
         }
     }
 

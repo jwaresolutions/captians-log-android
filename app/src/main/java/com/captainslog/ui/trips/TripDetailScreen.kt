@@ -9,13 +9,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.captainslog.bluetooth.BluetoothConnectionState
-import com.captainslog.bluetooth.SensorData
 import com.captainslog.database.entities.GpsPointEntity
 import com.captainslog.database.entities.TripEntity
 import com.captainslog.database.entities.CrewMemberEntity
 import com.captainslog.repository.TripStatistics
-import com.captainslog.ui.sensors.CompactSensorDataDisplay
 import com.captainslog.ui.components.DetailRow
 import com.captainslog.ui.components.StatisticRow
 import java.text.SimpleDateFormat
@@ -37,9 +34,6 @@ fun TripDetailScreen(
     onUpdateManualData: (TripEntity) -> Unit = {},
     onShareWithCrew: () -> Unit = {},
     onJoinTrip: () -> Unit = {},
-    // Optional sensor data parameters
-    sensorConnectionState: BluetoothConnectionState = BluetoothConnectionState.DISCONNECTED,
-    sensorData: List<SensorData> = emptyList(),
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -151,14 +145,6 @@ fun TripDetailScreen(
                 }
             }
             
-            // Sensor data display (only for active trips)
-            if (trip.endTime == null) {
-                CompactSensorDataDisplay(
-                    connectionState = sensorConnectionState,
-                    sensorData = sensorData
-                )
-            }
-            
             // Statistics card
             if (statistics != null) {
                 TripStatisticsCard(statistics = statistics)
@@ -171,12 +157,6 @@ fun TripDetailScreen(
             ManualDataCard(
                 trip = trip,
                 onEditManualData = onUpdateManualData
-            )
-            
-            // Photo capture component
-            com.captainslog.ui.components.PhotoCaptureComponent(
-                entityType = "trip",
-                entityId = trip.id
             )
             
             // Sync status

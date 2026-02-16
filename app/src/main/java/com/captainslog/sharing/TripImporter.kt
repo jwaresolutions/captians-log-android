@@ -4,7 +4,6 @@ import com.captainslog.database.dao.TripDao
 import com.captainslog.database.dao.BoatDao
 import com.captainslog.database.dao.GpsPointDao
 import com.captainslog.database.dao.NoteDao
-import com.captainslog.database.dao.PhotoDao
 import com.captainslog.database.entities.*
 import com.captainslog.sharing.models.*
 import com.google.gson.Gson
@@ -25,8 +24,7 @@ class TripImporter(
     private val tripDao: TripDao,
     private val boatDao: BoatDao,
     private val gpsPointDao: GpsPointDao,
-    private val noteDao: NoteDao,
-    private val photoDao: PhotoDao
+    private val noteDao: NoteDao
 ) {
     /**
      * Import a trip from a .captainslog file

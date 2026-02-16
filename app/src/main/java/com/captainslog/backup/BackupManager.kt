@@ -22,13 +22,10 @@ object BackupManager {
         val boats: List<BoatEntity>,
         val trips: List<TripEntity>,
         val notes: List<NoteEntity>,
-        val photos: List<PhotoEntity>,
         val gpsPoints: List<GpsPointEntity>,
         val crewMembers: List<CrewMemberEntity>,
         val todoLists: List<TodoListEntity>,
         val todoItems: List<TodoItemEntity>,
-        val maintenanceTemplates: List<MaintenanceTemplateEntity>,
-        val maintenanceEvents: List<MaintenanceEventEntity>,
         val markedLocations: List<MarkedLocationEntity>
     )
 
@@ -36,13 +33,10 @@ object BackupManager {
         val boats: Int,
         val trips: Int,
         val notes: Int,
-        val photos: Int,
         val gpsPoints: Int,
         val crewMembers: Int,
         val todoLists: Int,
         val todoItems: Int,
-        val maintenanceTemplates: Int,
-        val maintenanceEvents: Int,
         val markedLocations: Int
     )
 
@@ -57,13 +51,10 @@ object BackupManager {
             boats = database.boatDao().getAllBoatsSync(),
             trips = database.tripDao().getAllTripsSync(),
             notes = database.noteDao().getAllNotesSync(),
-            photos = database.photoDao().getAllPhotosSync(),
             gpsPoints = database.gpsPointDao().getAllGpsPointsSync(),
             crewMembers = database.crewMemberDao().getAllCrewMembersSync(),
             todoLists = database.todoListDao().getAllTodoListsSync(),
             todoItems = database.todoItemDao().getAllTodoItemsSync(),
-            maintenanceTemplates = database.maintenanceTemplateDao().getAllTemplatesSync(),
-            maintenanceEvents = database.maintenanceEventDao().getAllEventsSync(),
             markedLocations = database.markedLocationDao().getAllMarkedLocationsSync()
         )
 
@@ -86,20 +77,11 @@ object BackupManager {
             database.gpsPointDao().insertGpsPoints(backupData.gpsPoints)
             database.noteDao().insertNotes(backupData.notes)
 
-            // Photos need individual inserts
-            backupData.photos.forEach { photo ->
-                database.photoDao().insertPhoto(photo)
-            }
-
             // 4. Todo system (depends on trips/boats)
             database.todoListDao().insertTodoLists(backupData.todoLists)
             database.todoItemDao().insertTodoItems(backupData.todoItems)
 
-            // 5. Maintenance system (depends on boats)
-            database.maintenanceTemplateDao().insertTemplates(backupData.maintenanceTemplates)
-            database.maintenanceEventDao().insertEvents(backupData.maintenanceEvents)
-
-            // 6. Marked locations (depends on trips)
+            // 5. Marked locations (depends on trips)
             database.markedLocationDao().insertMarkedLocations(backupData.markedLocations)
         }
 
@@ -107,13 +89,10 @@ object BackupManager {
             boats = backupData.boats.size,
             trips = backupData.trips.size,
             notes = backupData.notes.size,
-            photos = backupData.photos.size,
             gpsPoints = backupData.gpsPoints.size,
             crewMembers = backupData.crewMembers.size,
             todoLists = backupData.todoLists.size,
             todoItems = backupData.todoItems.size,
-            maintenanceTemplates = backupData.maintenanceTemplates.size,
-            maintenanceEvents = backupData.maintenanceEvents.size,
             markedLocations = backupData.markedLocations.size
         )
     }

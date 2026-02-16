@@ -33,14 +33,10 @@ object DatabaseModule {
 
     @Provides fun provideTripDao(db: AppDatabase): TripDao = db.tripDao()
     @Provides fun provideGpsPointDao(db: AppDatabase): GpsPointDao = db.gpsPointDao()
-    @Provides fun providePhotoDao(db: AppDatabase): PhotoDao = db.photoDao()
     @Provides fun provideBoatDao(db: AppDatabase): BoatDao = db.boatDao()
     @Provides fun provideNoteDao(db: AppDatabase): NoteDao = db.noteDao()
     @Provides fun provideTodoListDao(db: AppDatabase): TodoListDao = db.todoListDao()
     @Provides fun provideTodoItemDao(db: AppDatabase): TodoItemDao = db.todoItemDao()
-    @Provides fun provideMaintenanceTemplateDao(db: AppDatabase): MaintenanceTemplateDao = db.maintenanceTemplateDao()
-    @Provides fun provideMaintenanceEventDao(db: AppDatabase): MaintenanceEventDao = db.maintenanceEventDao()
     @Provides fun provideMarkedLocationDao(db: AppDatabase): MarkedLocationDao = db.markedLocationDao()
-    @Provides fun provideOfflineChangeDao(db: AppDatabase): OfflineChangeDao = db.offlineChangeDao()
     @Provides fun provideCrewMemberDao(db: AppDatabase): CrewMemberDao = db.crewMemberDao()
 }

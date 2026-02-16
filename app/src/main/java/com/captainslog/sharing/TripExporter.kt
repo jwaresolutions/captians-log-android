@@ -5,7 +5,6 @@ import com.captainslog.database.dao.TripDao
 import com.captainslog.database.dao.BoatDao
 import com.captainslog.database.dao.GpsPointDao
 import com.captainslog.database.dao.NoteDao
-import com.captainslog.database.dao.PhotoDao
 import com.captainslog.security.SecurePreferences
 import com.captainslog.sharing.models.*
 import com.google.gson.Gson
@@ -17,7 +16,6 @@ class TripExporter(
     private val boatDao: BoatDao,
     private val gpsPointDao: GpsPointDao,
     private val noteDao: NoteDao,
-    private val photoDao: PhotoDao,
     private val securePreferences: SecurePreferences
 ) {
     /**
@@ -32,7 +30,6 @@ class TripExporter(
         val boat = boatDao.getBoatById(trip.boatId)
         val gpsPoints = gpsPointDao.getGpsPointsForTripSync(tripId)
         val notes = noteDao.getNotesByTripSync(tripId)
-        val photos = photoDao.getPhotosForEntitySync("trip", tripId)
 
         val exportData = TripExportData(
             origin = "device:${securePreferences.deviceId}",
@@ -41,7 +38,7 @@ class TripExporter(
             boat = boat?.let { mapToBoatData(it) },
             gpsPoints = gpsPoints.map { mapToGpsPointData(it) },
             notes = notes.map { mapToNoteData(it) },
-            photos = photos.map { mapToPhotoData(it) }
+            photos = emptyList()
         )
 
         val json = Gson().toJson(exportData)
@@ -97,12 +94,4 @@ class TripExporter(
         )
     }
 
-    private fun mapToPhotoData(photo: com.captainslog.database.entities.PhotoEntity): PhotoData {
-        return PhotoData(
-            id = photo.id,
-            filename = File(photo.localPath).name,
-            caption = null,
-            base64 = null  // Don't include photo data in export for now
-        )
-    }
 }

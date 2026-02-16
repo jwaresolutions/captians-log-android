@@ -77,10 +77,6 @@ fun BoatListScreen(
             TopAppBar(
                 title = { Text("Boats") },
                 actions = {
-                    com.captainslog.ui.components.CompactSyncStatusIndicator(
-                        onSyncClick = { viewModel.performFullSync() },
-                        database = database
-                    )
                 }
             )
         },

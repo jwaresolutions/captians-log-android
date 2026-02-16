@@ -15,7 +15,6 @@ import com.captainslog.database.entities.TripEntity
 import com.captainslog.repository.TripRepository
 import com.captainslog.repository.TripStatistics
 import com.captainslog.service.GpsTrackingService
-import com.captainslog.sync.SyncOrchestrator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,8 +32,7 @@ import javax.inject.Inject
 class TripTrackingViewModel @Inject constructor(
     application: Application,
     private val repository: TripRepository,
-    private val database: AppDatabase,
-    private val syncOrchestrator: SyncOrchestrator
+    private val database: AppDatabase
 ) : AndroidViewModel(application) {
 
     companion object {
@@ -514,11 +512,7 @@ class TripTrackingViewModel @Inject constructor(
                 if (trip.id == _currentTripId.value) {
                     _currentTrip.value = trip
                 }
-
-                // Trigger sync to upload manual data to backend
-                syncOrchestrator.triggerImmediateSync()
-
-                Log.d(TAG, "Manual data updated successfully for trip ${trip.id} and sync triggered")
+                Log.d(TAG, "Manual data updated successfully for trip ${trip.id}")
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating manual data for trip ${trip.id}", e)
                 _errorMessage.value = "Failed to update manual data: ${e.message}"

@@ -10,20 +10,16 @@ Android application for the Boat Tracking System, built with Kotlin and Jetpack 
 - JDK 17
 - Google Maps API Key
 
-## Project 
+## Project
 
 ```
-app/src/main/java/com/boattracking/
+app/src/main/java/com/captainslog/
 ├── ui/                 # Jetpack Compose UI screens
 ├── viewmodel/          # ViewModels for MVVM architecture
 ├── repository/         # Data repositories
 ├── database/           # Room database entities, DAOs, and converters
-├── network/            # Retrofit API service and models
-├── service/            # Foreground services (GPS tracking, Bluetooth)
-├── bluetooth/          # Bluetooth integration for Arduino sensors
-├── sync/               # WorkManager sync jobs
-├── security/           # Certificate pinning and secure storage
-├── connection/         # Connection manager (local/remote)
+├── service/            # Foreground services (GPS tracking)
+├── security/           # Secure storage
 └── util/               # Utility classes
 ```
 
@@ -74,20 +70,12 @@ app/src/main/java/com/boattracking/
 #### Database (Room)
 - **TripEntity**: Stores trip information
 - **GpsPointEntity**: Stores GPS coordinates for trips
-- **PhotoEntity**: Stores photo metadata and upload status
-
-#### Network (Retrofit + OkHttp)
-- **ApiService**: REST API endpoints
-- **ConnectionManager**: Dual connection mode (local/remote)
-- **Certificate Pinning**: TLS certificate validation
 
 #### Security
-- **SecurePreferences**: Encrypted storage for API keys and URLs
-- **CertificatePinner**: SHA-256 certificate pinning for both local and remote connections
+- **SecurePreferences**: Encrypted storage for app preferences
 
 #### Services
 - **GpsTrackingService**: Foreground service for continuous GPS tracking
-- **BluetoothService**: Arduino sensor communication
 
 ## Features
 
@@ -97,17 +85,8 @@ Record every nautical mile with precise GPS tracking. Capture routes, speed, dis
 ### Nautical Charts & Maps
 Interactive maps with multiple chart providers: NOAA nautical charts (US coastal), GEBCO bathymetry (global ocean depth), and OpenSeaMap overlays (buoys, lights, marks). View real-time tide stations, NOAA weather alerts, marine weather conditions, wave data, and vessel traffic (AIS). Save and categorize custom locations (marinas, fishing spots, anchorages, hazards).
 
-### Photo Logs
-Capture and attach photos to trips. Build a visual record of your adventures. Photos sync automatically over WiFi with smart 7-day local retention.
-
 ### Crew Management
 Share trips with crew via QR codes. Track crew members across voyages. Captain and crew role differentiation.
-
-### Maintenance Tracking
-Create maintenance templates and schedules. Track overdue, upcoming, and completed tasks. Keep a full service history for your vessel.
-
-### Sensor Integration
-Connect Bluetooth sensors (Arduino-compatible) for real-time environmental data: temperature, barometric pressure, humidity. Monitor conditions while underway.
 
 ### Captain's License Tracking
 Track sea time toward licensing requirements. View days logged, progress indicators, and estimated completion dates.
@@ -118,31 +97,13 @@ Organize notes by type (personal, technical, safety). Manage boat-specific task 
 ### Multi-Boat Support
 Manage multiple vessels from a single app. Share boat configurations via QR codes. Set active boat for trip recording.
 
-### Offline-First with Cloud Sync
-Works fully offline with local SQLite storage. Automatic sync when connected. Conflict detection and resolution. Secure JWT authentication and certificate pinning.
+### Offline-First Local Storage
+All data is stored locally on your device using SQLite. No internet connection required.
 
 ## Technical Details
 
-### Dual Connection Mode
-The app supports two connection endpoints:
-- **Local Connection** (optional): Direct connection on local network
-- **Remote Connection** (required): Connection via Cloudflare tunnel
-
-Connection priority:
-1. Try local connection first (2-second timeout)
-2. Automatically fall back to remote if local unavailable
-
 ### Security Features
-- TLS certificate pinning (separate pins for local/remote)
 - Encrypted storage using EncryptedSharedPreferences
-- API key authentication
-- HTTPS-only communication
-
-### Offline Functionality
-- Local storage using Room database
-- Automatic sync when online
-- WiFi-only photo uploads
-- 7-day photo retention after upload
 
 ### GPS Tracking
 - Foreground service with persistent notification
@@ -249,45 +210,16 @@ Pushing to `main` with changes in `web/` triggers the GitHub Actions workflow (`
 ./gradlew connectedAndroidTest
 ```
 
-## Configuration
-
-### First-Time Setup
-On first launch, the app will prompt for:
-1. **API Key**: Authentication key for backend API
-2. **Remote URL**: Required server URL (e.g., https://captainslog.jware.dev)
-3. **Remote Certificate Pin**: SHA-256 fingerprint of remote certificate
-4. **Local URL**: Optional local server URL (e.g., https://local.captainslog.jware.dev:8585)
-5. **Local Certificate Pin**: SHA-256 fingerprint of local certificate
-
-### Getting Certificate Fingerprints
-```bash
-# For remote certificate
-echo | openssl s_client -connect captainslog.jware.dev:443 2>/dev/null | \
-  openssl x509 -pubkey -noout | \
-  openssl pkey -pubin -outform der | \
-  openssl dgst -sha256 -binary | \
-  openssl enc -base64
-
-# For local certificate
-echo | openssl s_client -connect local.captainslog.jware.dev:8585 2>/dev/null | \
-  openssl x509 -pubkey -noout | \
-  openssl pkey -pubin -outform der | \
-  openssl dgst -sha256 -binary | \
-  openssl enc -base64
-```
-
 ## Permissions
 
 The app requires the following permissions:
-- **INTERNET**: API communication
+- **INTERNET**: Map tile loading and marine data
 - **ACCESS_FINE_LOCATION**: GPS tracking
 - **ACCESS_COARSE_LOCATION**: GPS tracking
 - **FOREGROUND_SERVICE**: Continuous GPS tracking
 - **FOREGROUND_SERVICE_LOCATION**: Location-based foreground service
-- **POST_NOTIFICATIONS**: Trip tracking and maintenance notifications
-- **BLUETOOTH**: Arduino sensor communication
-- **CAMERA**: Photo attachments
-- **READ_EXTERNAL_STORAGE**: Photo access
+- **POST_NOTIFICATIONS**: Trip tracking notifications
+- **CAMERA**: QR code scanning
 
 ## Dependencies
 
@@ -300,16 +232,8 @@ The app requires the following permissions:
 ### Database
 - Room 2.6.1
 
-### Networking
-- Retrofit 2.9.0
-- OkHttp 4.12.0
-- Gson 2.10.1
-
 ### Security
 - AndroidX Security Crypto 1.1.0-alpha06
-
-### Background Work
-- WorkManager 2.9.0
 
 ### Maps
 - Google Maps 18.2.0
@@ -332,21 +256,10 @@ The app requires the following permissions:
 ./gradlew build --refresh-dependencies
 ```
 
-### Certificate Pinning Errors
-- Verify certificate fingerprints are correct
-- Ensure URLs match certificate domains
-- Check that certificates haven't expired
-
 ### GPS Not Working
 - Ensure location permissions are granted
 - Check that GPS is enabled on device
 - Verify foreground service is running
-
-### Sync Issues
-- Check internet connectivity
-- Verify API key is correct
-- Check backend server is running
-- Review connection manager logs
 
 ## License
 

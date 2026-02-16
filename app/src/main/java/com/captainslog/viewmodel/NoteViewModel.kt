@@ -30,8 +30,6 @@ class NoteViewModel @Inject constructor(
     val availableTags: StateFlow<List<String>> = _availableTags
 
     init {
-        // Initial sync from API
-        syncNotesFromApi()
         loadAvailableTags()
     }
 
@@ -179,24 +177,6 @@ class NoteViewModel @Inject constructor(
             if (result.isSuccess) {
                 _availableTags.value = result.getOrNull() ?: emptyList()
             }
-        }
-    }
-
-    /**
-     * Sync notes from API
-     */
-    fun syncNotesFromApi() {
-        launchWithErrorHandling {
-            repository.syncNotesFromApi()
-        }
-    }
-
-    /**
-     * Sync notes to API
-     */
-    fun syncNotesToApi() {
-        launchWithErrorHandling {
-            repository.syncNotesToApi()
         }
     }
 

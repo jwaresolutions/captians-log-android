@@ -1,7 +1,6 @@
 package com.captainslog.di
 
 import android.content.Context
-import com.captainslog.mode.AppModeManager
 import com.captainslog.security.SecurePreferences
 import dagger.Module
 import dagger.Provides
@@ -18,11 +17,5 @@ object AppModule {
     @Singleton
     fun provideSecurePreferences(@ApplicationContext context: Context): SecurePreferences {
         return SecurePreferences(context)
-    }
-
-    @Provides
-    @Singleton
-    fun provideAppModeManager(securePreferences: SecurePreferences): AppModeManager {
-        return AppModeManager(securePreferences)
     }
 }

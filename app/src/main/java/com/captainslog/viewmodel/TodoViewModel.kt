@@ -168,22 +168,6 @@ class TodoViewModel @Inject constructor(
         }
     }
 
-    fun syncTodoLists() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-
-            todoRepository.syncTodoLists()
-                .onSuccess {
-                    _uiState.value = _uiState.value.copy(isLoading = false)
-                }
-                .onFailure { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = error.message ?: "Failed to sync todo lists"
-                    )
-                }
-        }
-    }
 
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)

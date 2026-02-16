@@ -63,7 +63,7 @@ fun ScanTripCrewScreen(
 
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var showDisplayNameDialog by remember { mutableStateOf(false) }
-    var displayNameInput by remember { mutableStateOf(SecurePreferences(context).username ?: "") }
+    var displayNameInput by remember { mutableStateOf(SecurePreferences(context).displayName ?: "") }
     var scannedBoatName by remember { mutableStateOf(preScannedData?.data?.boatName ?: "") }
     var scannedCaptainName by remember { mutableStateOf(preScannedData?.data?.captainName ?: "") }
     var scannedWaterType by remember { mutableStateOf(preScannedData?.data?.waterType ?: "") }
@@ -126,7 +126,7 @@ fun ScanTripCrewScreen(
                     // Generate crew response QR for captain to scan
                     if (result is ImportResult.Created || result is ImportResult.Updated) {
                         val generator = TripCrewShareGenerator(securePreferences)
-                        val displayName = securePreferences.displayName ?: securePreferences.username ?: "Crew"
+                        val displayName = securePreferences.displayName ?: securePreferences.displayName ?: "Crew"
                         crewResponseQrBitmap = withContext(Dispatchers.Default) {
                             generator.generateCrewResponseQrBitmap(
                                 deviceId = securePreferences.deviceId,

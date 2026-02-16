@@ -36,7 +36,7 @@ class TripCrewShareGenerator(
         size: Int = 512
     ): Bitmap {
         val captainName = securePreferences.displayName
-            ?: securePreferences.username
+            ?: securePreferences.displayName
             ?: "Captain"
 
         val shareData = TripCrewShareData(

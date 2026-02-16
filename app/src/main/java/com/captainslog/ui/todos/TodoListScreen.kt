@@ -39,10 +39,6 @@ fun TodoListScreen(
     var showEditDialog by remember { mutableStateOf<TodoListEntity?>(null) }
     var showDeleteDialog by remember { mutableStateOf<TodoListEntity?>(null) }
 
-    LaunchedEffect(Unit) {
-        todoViewModel.syncTodoLists()
-    }
-
     Scaffold(
         modifier = modifier,
         floatingActionButton = {
