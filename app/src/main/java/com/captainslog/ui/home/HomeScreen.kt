@@ -11,7 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -40,22 +40,23 @@ fun HomeScreen(
     // Pulsing glow animation - matches web's 3s ease-in-out infinite
     val infiniteTransition = rememberInfiniteTransition(label = "logoGlow")
     val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.4f,
+        initialValue = 0f,
         targetValue = 0.9f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = EaseInOut),
+            animation = tween(3000, easing = EaseInOut),
             repeatMode = RepeatMode.Reverse
         ),
         label = "glowAlpha"
     )
-    val glowRadius by infiniteTransition.animateFloat(
-        initialValue = 30f,
-        targetValue = 70f,
+    // Glow size pulse: blur radius grows and shrinks (like CSS drop-shadow)
+    val glowSize by infiniteTransition.animateFloat(
+        initialValue = 0.28f,
+        targetValue = 0.45f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = EaseInOut),
+            animation = tween(3000, easing = EaseInOut),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "glowRadius"
+        label = "glowSize"
     )
 
     // Fade-in animation
@@ -72,9 +73,9 @@ fun HomeScreen(
         // Starfield background
         Starfield(
             modifier = Modifier.fillMaxSize(),
-            numStars = 150,
-            speed = 2f,
-            opacity = 0.5f
+            numStars = 300,
+            speed = 4f,
+            opacity = 0.4f
         )
 
         // Content overlay
@@ -86,37 +87,41 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Pulsing logo with orange glow (matching web's #FF9933)
+            // Pulsing logo with orange glow (matching web's drop-shadow)
             val glowColor = Color(0xFFFF9933)
             Box(
-                modifier = Modifier
-                    .drawBehind {
-                        // Draw glow behind the logo
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                colors = listOf(
-                                    glowColor.copy(alpha = glowAlpha * 0.8f),
-                                    glowColor.copy(alpha = glowAlpha * 0.3f),
-                                    Color.Transparent
-                                ),
-                                center = Offset(size.width / 2f, size.height / 2f),
-                                radius = glowRadius * 4f
-                            )
-                        )
-                    },
                 contentAlignment = Alignment.Center
             ) {
+                // Orange glow behind logo — solid center fades outward
+                // Size and intensity pulse together like CSS drop-shadow
+                Canvas(
+                    modifier = Modifier.size(400.dp)
+                ) {
+                    val cx = size.width / 2f
+                    val cy = size.height / 2f
+                    val radius = size.minDimension * glowSize
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                glowColor.copy(alpha = glowAlpha * 0.8f),
+                                glowColor.copy(alpha = glowAlpha * 0.5f),
+                                glowColor.copy(alpha = glowAlpha * 0.2f),
+                                Color.Transparent
+                            ),
+                            center = Offset(cx, cy),
+                            radius = radius
+                        ),
+                        center = Offset(cx, cy),
+                        radius = radius
+                    )
+                }
+                // Actual logo on top — covers glow center
                 Image(
                     painter = painterResource(id = R.drawable.captains_log_logo),
                     contentDescription = "Captain's Log",
                     modifier = Modifier
                         .height(200.dp)
-                        .graphicsLayer {
-                            // Subtle scale pulse
-                            val scale = 1f + (glowAlpha - 0.4f) * 0.06f
-                            scaleX = scale
-                            scaleY = scale
-                        }
+                        .alpha(1f)
                 )
             }
 

@@ -1,13 +1,14 @@
 package com.captainslog.ui.components
 
+import android.graphics.Bitmap
+import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
@@ -17,19 +18,18 @@ import kotlin.random.Random
 private data class Star(
     var x: Float,
     var y: Float,
-    var z: Float,
-    var prevX: Float? = null,
-    var prevY: Float? = null
+    var z: Float
 )
 
 /**
  * Animated starfield background that renders stars moving toward the viewer,
- * creating a warp-speed effect. Ported from the web version's canvas starfield.
+ * creating a warp-speed effect with motion-blur trails.
+ * Uses a persistent bitmap to achieve the website's trailing fade effect.
  */
 @Composable
 fun Starfield(
     modifier: Modifier = Modifier,
-    numStars: Int = 150,
+    numStars: Int = 300,
     speed: Float = 2f,
     opacity: Float = 0.4f
 ) {
@@ -46,6 +46,37 @@ fun Starfield(
         }
     }
 
+    // Persistent bitmap for motion blur effect
+    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var androidCanvas by remember { mutableStateOf<AndroidCanvas?>(null) }
+
+    // Recreate bitmap when size changes
+    LaunchedEffect(size) {
+        if (size.width > 0 && size.height > 0) {
+            bitmap?.recycle()
+            val newBitmap = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
+            bitmap = newBitmap
+            androidCanvas = AndroidCanvas(newBitmap)
+        }
+    }
+
+    // Clean up bitmap on dispose
+    DisposableEffect(Unit) {
+        onDispose {
+            bitmap?.recycle()
+            bitmap = null
+            androidCanvas = null
+        }
+    }
+
+    // Paints for drawing
+    val fadePaint = remember { Paint().apply {
+        color = android.graphics.Color.argb(25, 0, 0, 0) // semi-transparent black for trails
+    } }
+    val starPaint = remember { Paint().apply {
+        isAntiAlias = true
+    } }
+
     // Animation tick
     var tick by remember { mutableLongStateOf(0L) }
     LaunchedEffect(Unit) {
@@ -53,15 +84,39 @@ fun Starfield(
             delay(16L) // ~60fps
             val w = size.width.toFloat()
             val h = size.height.toFloat()
-            if (w > 0 && h > 0) {
-                stars.forEachIndexed { index, star ->
+            val bmp = bitmap
+            val cv = androidCanvas
+            if (w > 0 && h > 0 && bmp != null && cv != null) {
+                val centerX = w / 2f
+                val centerY = h / 2f
+                val maxZ = w.coerceAtLeast(1000f)
+
+                // Draw fade overlay on persistent bitmap (creates motion blur trails)
+                cv.drawRect(0f, 0f, w, h, fadePaint)
+
+                // Update and draw stars onto persistent bitmap
+                stars.forEach { star ->
                     star.z -= speed
                     if (star.z <= 0) {
                         star.x = Random.nextFloat() * w * 2 - w
                         star.y = Random.nextFloat() * h * 2 - h
-                        star.z = w.coerceAtLeast(1000f)
-                        star.prevX = null
-                        star.prevY = null
+                        star.z = w.coerceAtLeast(1000f) * (0.5f + Random.nextFloat() * 0.5f)
+                    }
+
+                    if (star.z > 0) {
+                        val k = 128f / star.z
+                        val px = star.x * k + centerX
+                        val py = star.y * k + centerY
+
+                        if (px in 0f..w && py in 0f..h) {
+                            val depthRatio = (1f - star.z / maxZ).coerceIn(0f, 1f)
+                            val starSize = (depthRatio * 2f).coerceAtLeast(0.5f)
+                            val brightness = (depthRatio * 255).toInt()
+                            val alpha = ((0.5f + depthRatio * 0.5f) * opacity * 255).toInt().coerceIn(0, 255)
+
+                            starPaint.color = android.graphics.Color.argb(alpha, brightness, brightness, 255)
+                            cv.drawCircle(px, py, starSize, starPaint)
+                        }
                     }
                 }
                 tick++
@@ -77,51 +132,13 @@ fun Starfield(
             .fillMaxSize()
             .onSizeChanged { size = it }
     ) {
-        val w = this.size.width
-        val h = this.size.height
-        if (w <= 0 || h <= 0) return@Canvas
-
-        val centerX = w / 2f
-        val centerY = h / 2f
-        val maxZ = w.coerceAtLeast(1000f)
-
-        // Use currentTick to prevent dead code elimination
         @Suppress("UNUSED_EXPRESSION")
         currentTick
 
-        stars.forEach { star ->
-            if (star.z <= 0) return@forEach
-            val k = 128f / star.z
-            val px = star.x * k + centerX
-            val py = star.y * k + centerY
-
-            if (px in 0f..w && py in 0f..h) {
-                val depthRatio = (1f - star.z / maxZ).coerceIn(0f, 1f)
-                val starSize = depthRatio * 3f
-                val brightness = depthRatio
-                val alpha = (0.3f + depthRatio * 0.7f) * opacity
-
-                // Draw trail
-                val prevX = star.prevX
-                val prevY = star.prevY
-                if (prevX != null && prevY != null) {
-                    drawLine(
-                        color = Color(brightness, brightness, 1f, alpha * 0.4f),
-                        start = Offset(prevX, prevY),
-                        end = Offset(px, py),
-                        strokeWidth = starSize * 0.5f
-                    )
-                }
-
-                // Draw star
-                drawCircle(
-                    color = Color(brightness, brightness, 1f, alpha),
-                    radius = starSize.coerceAtLeast(0.5f),
-                    center = Offset(px, py)
-                )
-
-                star.prevX = px
-                star.prevY = py
+        val bmp = bitmap
+        if (bmp != null && !bmp.isRecycled) {
+            drawIntoCanvas { canvas ->
+                canvas.nativeCanvas.drawBitmap(bmp, 0f, 0f, null)
             }
         }
     }
