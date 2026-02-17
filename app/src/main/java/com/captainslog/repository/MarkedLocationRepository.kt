@@ -84,8 +84,7 @@ class MarkedLocationRepository(
                 longitude = longitude,
                 category = category,
                 notes = notes,
-                tags = tags.joinToString(","),
-                synced = false
+                tags = tags.joinToString(",")
             )
 
             // Save locally
@@ -121,7 +120,6 @@ class MarkedLocationRepository(
                 category = category ?: existingLocation.category,
                 notes = notes ?: existingLocation.notes,
                 tags = tags?.joinToString(",") ?: existingLocation.tags,
-                synced = false,
                 lastModified = Date()
             )
 

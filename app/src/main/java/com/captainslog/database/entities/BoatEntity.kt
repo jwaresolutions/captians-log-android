@@ -15,7 +15,6 @@ data class BoatEntity(
     val name: String,
     val enabled: Boolean = true,
     val isActive: Boolean = false,
-    val synced: Boolean = false,
     val lastModified: Date = Date(),
     val createdAt: Date = Date(),
     val ownerId: String? = null,

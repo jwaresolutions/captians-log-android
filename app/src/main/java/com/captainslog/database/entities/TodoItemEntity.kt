@@ -30,6 +30,5 @@ data class TodoItemEntity(
     val completed: Boolean = false,
     val completedAt: Date? = null,
     val createdAt: Date,
-    val updatedAt: Date,
-    val synced: Boolean = false
+    val updatedAt: Date
 )

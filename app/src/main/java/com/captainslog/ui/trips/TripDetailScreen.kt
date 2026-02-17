@@ -158,9 +158,6 @@ fun TripDetailScreen(
                 trip = trip,
                 onEditManualData = onUpdateManualData
             )
-            
-            // Sync status
-            SyncStatusCard(trip = trip)
         }
 }
 
@@ -520,42 +517,6 @@ fun ManualDataCard(
                 onEditManualData(updatedTrip)
             }
         )
-    }
-}
-
-@Composable
-fun SyncStatusCard(
-    trip: TripEntity,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (trip.synced) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.secondaryContainer
-            }
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Sync Status",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = if (trip.synced) "Synced" else "Not Synced",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium
-            )
-        }
     }
 }
 

@@ -22,9 +22,6 @@ interface MarkedLocationDao {
     @Query("SELECT * FROM marked_locations WHERE name LIKE '%' || :search || '%' OR notes LIKE '%' || :search || '%' ORDER BY name ASC")
     fun searchMarkedLocations(search: String): Flow<List<MarkedLocationEntity>>
     
-    @Query("SELECT * FROM marked_locations WHERE synced = 0")
-    suspend fun getUnsyncedMarkedLocations(): List<MarkedLocationEntity>
-    
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMarkedLocation(location: MarkedLocationEntity)
     
@@ -33,9 +30,6 @@ interface MarkedLocationDao {
     
     @Update
     suspend fun updateMarkedLocation(location: MarkedLocationEntity)
-    
-    @Query("UPDATE marked_locations SET synced = 1 WHERE id = :id")
-    suspend fun markAsSynced(id: String)
     
     @Delete
     suspend fun deleteMarkedLocation(location: MarkedLocationEntity)

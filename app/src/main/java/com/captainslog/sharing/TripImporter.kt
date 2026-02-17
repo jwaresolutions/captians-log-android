@@ -80,8 +80,7 @@ class TripImporter(
                     createdAt = Date(note.createdAt),
                     lastModified = Date(note.createdAt),
                     originSource = exportData.origin,
-                    originTimestamp = exportData.exportedAt,
-                    synced = false
+                    originTimestamp = exportData.exportedAt
                 )
             }
             noteDao.insertNotes(noteEntities)
@@ -109,7 +108,6 @@ class TripImporter(
                 name = boatData.name,
                 enabled = boatData.enabled,
                 isActive = false,  // Don't auto-activate imported boats
-                synced = false,
                 originSource = origin,
                 originTimestamp = timestamp
             )
@@ -130,7 +128,6 @@ class TripImporter(
             destination = trip.destination,
             numberOfPassengers = trip.passengerCount,
             fuelConsumed = trip.fuelConsumed,
-            synced = false,
             originSource = exportData.origin,
             originTimestamp = exportData.exportedAt,
             isReadOnly = true  // Imported trips are read-only by default

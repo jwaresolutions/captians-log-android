@@ -41,8 +41,7 @@ class TripCrewImporter(
                 val updatedTrip = existing.copy(
                     endTime = shareData.data.endTime?.let { Date(it) },
                     originTimestamp = shareData.timestamp,
-                    lastModified = Date(),
-                    synced = false
+                    lastModified = Date()
                 )
                 tripDao.updateTrip(updatedTrip)
 
@@ -63,7 +62,6 @@ class TripCrewImporter(
                 name = shareData.data.boatName,
                 enabled = true,
                 isActive = false,
-                synced = false,
                 createdAt = Date(),
                 lastModified = Date(),
                 ownerId = null,
@@ -85,7 +83,6 @@ class TripCrewImporter(
             captainId = shareData.origin,
             captainTripId = shareData.data.tripId,
             captainName = shareData.data.captainName,
-            synced = false,
             originSource = shareData.origin,
             originTimestamp = shareData.timestamp,
             isReadOnly = false,

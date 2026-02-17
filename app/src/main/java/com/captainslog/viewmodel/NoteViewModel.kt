@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 /**
  * ViewModel for managing note data and operations.
- * Provides UI state and handles note CRUD operations with sync.
+ * Provides UI state and handles note CRUD operations.
  */
 @HiltViewModel
 class NoteViewModel @Inject constructor(

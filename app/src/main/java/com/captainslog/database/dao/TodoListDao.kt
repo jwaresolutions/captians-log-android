@@ -18,9 +18,6 @@ interface TodoListDao {
     @Query("SELECT * FROM todo_lists WHERE id = :id")
     suspend fun getTodoListById(id: String): TodoListEntity?
 
-    @Query("SELECT * FROM todo_lists WHERE synced = 0")
-    suspend fun getUnsyncedTodoLists(): List<TodoListEntity>
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTodoList(todoList: TodoListEntity)
 
@@ -35,9 +32,6 @@ interface TodoListDao {
 
     @Query("DELETE FROM todo_lists WHERE id = :id")
     suspend fun deleteTodoListById(id: String)
-
-    @Query("UPDATE todo_lists SET synced = 1 WHERE id = :id")
-    suspend fun markTodoListAsSynced(id: String)
 
     @Query("DELETE FROM todo_lists")
     suspend fun deleteAllTodoLists()

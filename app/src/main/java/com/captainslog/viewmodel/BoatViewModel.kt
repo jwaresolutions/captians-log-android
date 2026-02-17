@@ -11,7 +11,7 @@ import javax.inject.Inject
 
 /**
  * ViewModel for managing boat data and operations.
- * Provides UI state and handles boat CRUD operations with sync.
+ * Provides UI state and handles boat CRUD operations.
  */
 @HiltViewModel
 class BoatViewModel @Inject constructor(

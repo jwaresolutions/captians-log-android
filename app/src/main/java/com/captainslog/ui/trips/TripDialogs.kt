@@ -258,7 +258,6 @@ fun TripEditDialog(
                                     bodyOfWater = if (bodyOfWater.isNotEmpty()) bodyOfWater else null,
                                     boundaryClassification = if (boundaryClassification.isNotEmpty()) boundaryClassification else null,
                                     distanceOffshore = if (distanceOffshore.isNotEmpty()) distanceOffshore.toDouble() else null,
-                                    synced = false, // Mark as not synced since we're updating
                                     lastModified = Date()
                                 )
                                 onSave(updatedTrip)
@@ -492,7 +491,6 @@ fun ManualDataEditDialog(
                                     destination = if (destination.isNotEmpty()) destination else null,
                                     bodyOfWater = if (bodyOfWater.isNotEmpty()) bodyOfWater else null,
                                     distanceOffshore = if (distanceOffshore.isNotEmpty()) distanceOffshore.toDouble() else null,
-                                    synced = false, // Mark as not synced since we're updating
                                     lastModified = Date()
                                 )
                                 onSave(updatedTrip)

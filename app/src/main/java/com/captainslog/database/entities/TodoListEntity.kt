@@ -28,7 +28,6 @@ data class TodoListEntity(
     val boatId: String? = null, // Optional - only for boat-specific lists
     val createdAt: Date,
     val updatedAt: Date,
-    val synced: Boolean = false,
     val originSource: String? = null,    // Device UUID for P2P shares
     val originTimestamp: Long? = null   // Unix timestamp when shared/imported
 )

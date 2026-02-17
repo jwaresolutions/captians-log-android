@@ -59,7 +59,6 @@ class BoatRepository(
                 name = trimmedName,
                 enabled = true,
                 isActive = false,
-                synced = false,
                 lastModified = Date(),
                 createdAt = Date()
             )

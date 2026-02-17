@@ -194,13 +194,6 @@ fun TripListItem(
                         Text("IN PROGRESS", fontWeight = FontWeight.Bold)
                     }
                 }
-                !trip.synced -> {
-                    Badge(
-                        containerColor = MaterialTheme.colorScheme.secondary
-                    ) {
-                        Text("COMPLETED - NOT SYNCED")
-                    }
-                }
                 else -> {
                     Badge(
                         containerColor = MaterialTheme.colorScheme.primary

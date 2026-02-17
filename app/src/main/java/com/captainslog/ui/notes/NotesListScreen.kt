@@ -250,30 +250,13 @@ fun NoteCard(
                         }
                     }
                     
-                    // Date and sync status
-                    Row(
-                        modifier = Modifier.padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = dateFormat.format(note.createdAt),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        
-                        if (!note.synced) {
-                            AssistChip(
-                                onClick = { },
-                                label = { 
-                                    Text(
-                                        text = "Not synced",
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                }
-                            )
-                        }
-                    }
+                    // Date
+                    Text(
+                        text = dateFormat.format(note.createdAt),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
                 }
                 
                 // Delete button

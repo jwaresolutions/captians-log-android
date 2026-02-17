@@ -31,7 +31,6 @@ class QrBoatImporter(
             name = json.get("name")?.asString ?: "",
             enabled = true,
             isActive = false,
-            synced = false,
             lastModified = Date(),
             createdAt = Date(),
             // Vessel details

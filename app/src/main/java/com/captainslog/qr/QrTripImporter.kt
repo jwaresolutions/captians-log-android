@@ -163,7 +163,6 @@ class QrTripImporter(
             destination = trip.departurePort + " → " + trip.arrivalPort,
             captainName = trip.masterName,
             bodyOfWater = trip.bodyOfWater,
-            synced = false,
             lastModified = Date(),
             createdAt = Date()
         )

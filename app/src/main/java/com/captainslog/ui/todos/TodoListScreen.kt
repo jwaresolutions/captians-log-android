@@ -234,14 +234,6 @@ private fun TodoListCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
-                    if (!todoList.synced) {
-                        Text(
-                            text = "Not synced",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
                 }
                 
                 Row {

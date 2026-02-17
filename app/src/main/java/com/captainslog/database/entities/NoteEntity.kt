@@ -17,7 +17,6 @@ data class NoteEntity(
     val boatId: String? = null,
     val tripId: String? = null,
     val tags: List<String> = emptyList(),
-    val synced: Boolean = false,
     val lastModified: Date = Date(),
     val createdAt: Date = Date(),
     val originSource: String? = null,    // Device UUID for P2P shares

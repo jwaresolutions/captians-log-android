@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -210,13 +209,6 @@ fun BoatCard(
                                 }
                             )
                         }
-                        
-                        if (!boat.synced) {
-                            AssistChip(
-                                onClick = { },
-                                label = { Text("Not synced") }
-                            )
-                        }
                     }
                 }
             }
@@ -395,16 +387,14 @@ fun BoatListContent(
                             onSetActive = {
                                 viewModel.setActiveBoat(boat.id)
                             },
-                            onEdit = {
-                                // TODO: Implement boat editing functionality
-                                // For now, just show a placeholder message
-                            }
+                            onEdit = { },
+                            onShare = { }
                         )
                     }
                 }
             }
         }
-        
+
         // Snackbar host for messages
         SnackbarHost(
             hostState = snackbarHostState,
@@ -930,7 +920,6 @@ fun EditBoatDialog(
                                     ownerZipCode = if (ownerZipCode.isNotEmpty()) ownerZipCode else null,
                                     ownerEmail = if (ownerEmail.isNotEmpty()) ownerEmail else null,
                                     ownerPhone = if (ownerPhone.isNotEmpty()) ownerPhone else null,
-                                    synced = false,
                                     lastModified = Date()
                                 )
                                 onConfirm(updatedBoat)

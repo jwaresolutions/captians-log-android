@@ -30,8 +30,7 @@ class BoatImporter(
                     name = shareData.data.name,
                     enabled = shareData.data.enabled,
                     originTimestamp = shareData.timestamp,
-                    lastModified = Date(),
-                    synced = false
+                    lastModified = Date()
                 )
                 boatDao.updateBoat(updatedBoat)
                 return ImportResult.Updated(existing.id)
@@ -45,7 +44,6 @@ class BoatImporter(
             name = shareData.data.name,
             enabled = shareData.data.enabled,
             isActive = false,
-            synced = false,
             createdAt = Date(),
             lastModified = Date(),
             ownerId = null, // Shared boats don't have owner

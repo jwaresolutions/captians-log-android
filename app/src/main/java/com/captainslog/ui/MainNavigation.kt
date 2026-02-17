@@ -35,7 +35,6 @@ import com.captainslog.ui.trips.TripNavigation
 import com.captainslog.qr.QrTripImporter
 import com.captainslog.sharing.models.BoatShareData
 import com.captainslog.sharing.models.TripCrewShareData
-import com.captainslog.sharing.models.CrewResponseData
 import com.google.gson.JsonElement
 
 /**

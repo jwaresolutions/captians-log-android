@@ -13,9 +13,6 @@ interface TripDao {
     @Query("SELECT * FROM trips WHERE id = :tripId")
     suspend fun getTripById(tripId: String): TripEntity?
 
-    @Query("SELECT * FROM trips WHERE synced = 0")
-    suspend fun getUnsyncedTrips(): List<TripEntity>
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTrip(trip: TripEntity)
 
@@ -27,9 +24,6 @@ interface TripDao {
 
     @Delete
     suspend fun deleteTrip(trip: TripEntity)
-
-    @Query("UPDATE trips SET synced = 1 WHERE id = :tripId")
-    suspend fun markAsSynced(tripId: String)
 
     @Query("SELECT * FROM trips WHERE endTime IS NULL ORDER BY startTime DESC")
     suspend fun getActiveTrips(): List<TripEntity>

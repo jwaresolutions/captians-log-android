@@ -18,9 +18,6 @@ interface BoatDao {
     @Query("SELECT * FROM boats WHERE isActive = 1 LIMIT 1")
     suspend fun getActiveBoat(): BoatEntity?
 
-    @Query("SELECT * FROM boats WHERE synced = 0")
-    suspend fun getUnsyncedBoats(): List<BoatEntity>
-
     @Query("SELECT * FROM boats WHERE ownerId = :userId OR ownerId IS NULL")
     fun getOwnedBoats(userId: String): Flow<List<BoatEntity>>
 
@@ -38,9 +35,6 @@ interface BoatDao {
 
     @Delete
     suspend fun deleteBoat(boat: BoatEntity)
-
-    @Query("UPDATE boats SET synced = 1 WHERE id = :boatId")
-    suspend fun markAsSynced(boatId: String)
 
     @Query("UPDATE boats SET isActive = 0")
     suspend fun clearActiveBoat()

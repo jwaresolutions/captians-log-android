@@ -79,6 +79,7 @@ fun TripNavigation(
         }
     }
     
+    androidx.compose.foundation.layout.Box(modifier = modifier) {
     when {
         shareTripId != null -> {
             val trip = trips.find { it.id == shareTripId }
@@ -132,8 +133,7 @@ fun TripNavigation(
                 },
                 onJoinTrip = {
                     currentScreen = TripScreen.ScanTripCrew
-                },
-                modifier = modifier
+                }
             )
         }
         currentScreen == TripScreen.TripDetail -> {
@@ -206,6 +206,7 @@ fun TripNavigation(
                 database = database
             )
         }
+    }
     }
 }
 

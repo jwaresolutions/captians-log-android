@@ -27,9 +27,6 @@ interface NoteDao {
     @Query("SELECT * FROM notes WHERE content LIKE '%' || :searchQuery || '%' ORDER BY createdAt DESC")
     fun searchNotes(searchQuery: String): Flow<List<NoteEntity>>
 
-    @Query("SELECT * FROM notes WHERE synced = 0")
-    suspend fun getUnsyncedNotes(): List<NoteEntity>
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertNote(note: NoteEntity)
 
@@ -44,9 +41,6 @@ interface NoteDao {
 
     @Query("DELETE FROM notes WHERE id = :noteId")
     suspend fun deleteNoteById(noteId: String)
-
-    @Query("UPDATE notes SET synced = 1 WHERE id = :noteId")
-    suspend fun markAsSynced(noteId: String)
 
     @Query("SELECT DISTINCT tags FROM notes")
     suspend fun getAllTags(): List<String>

@@ -18,7 +18,6 @@ data class MarkedLocationEntity(
     val category: String, // fishing, marina, anchorage, hazard, other
     val notes: String? = null,
     val tags: String = "", // Comma-separated tags
-    val synced: Boolean = false,
     val lastModified: Date = Date(),
     val createdAt: Date = Date(),
     val originSource: String? = null,    // Device UUID for P2P shares

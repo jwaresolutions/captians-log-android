@@ -73,7 +73,6 @@ class NoteRepository(
                 boatId = boatId,
                 tripId = tripId,
                 tags = tags,
-                synced = false,
                 lastModified = Date(),
                 createdAt = Date()
             )
@@ -99,7 +98,6 @@ class NoteRepository(
                 val updatedNote = existingNote.copy(
                     content = content ?: existingNote.content,
                     tags = tags ?: existingNote.tags,
-                    synced = false,
                     lastModified = Date()
                 )
                 database.noteDao().updateNote(updatedNote)

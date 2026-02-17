@@ -22,7 +22,6 @@ data class TripEntity(
     val weatherConditions: String? = null,
     val numberOfPassengers: Int? = null,
     val destination: String? = null,
-    val synced: Boolean = false,
     val lastModified: Date = Date(),
     val createdAt: Date = Date(),
     val captainId: String? = null,       // User ID of captain (null = local user is captain)

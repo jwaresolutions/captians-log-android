@@ -278,14 +278,6 @@ private fun TodoItemCard(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                
-                if (!item.synced) {
-                    Text(
-                        text = "Not synced",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
             }
             
             Column {

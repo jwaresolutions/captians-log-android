@@ -38,8 +38,7 @@ class TodoRepository(
                 title = title,
                 boatId = boatId,
                 createdAt = now,
-                updatedAt = now,
-                synced = false
+                updatedAt = now
             )
 
             // Save locally
@@ -60,8 +59,7 @@ class TodoRepository(
             val updatedTodoList = existingTodoList.copy(
                 title = title ?: existingTodoList.title,
                 boatId = boatId ?: existingTodoList.boatId,
-                updatedAt = Date(),
-                synced = false
+                updatedAt = Date()
             )
 
             todoListDao.updateTodoList(updatedTodoList)
@@ -101,8 +99,7 @@ class TodoRepository(
                 completed = false,
                 completedAt = null,
                 createdAt = now,
-                updatedAt = now,
-                synced = false
+                updatedAt = now
             )
 
             // Save locally
@@ -125,8 +122,7 @@ class TodoRepository(
                 content = content ?: existingTodoItem.content,
                 completed = completed ?: existingTodoItem.completed,
                 completedAt = if (completed == true) now else if (completed == false) null else existingTodoItem.completedAt,
-                updatedAt = now,
-                synced = false
+                updatedAt = now
             )
 
             todoItemDao.updateTodoItem(updatedTodoItem)
@@ -148,8 +144,7 @@ class TodoRepository(
             val updatedTodoItem = existingTodoItem.copy(
                 completed = newCompleted,
                 completedAt = if (newCompleted) now else null,
-                updatedAt = now,
-                synced = false
+                updatedAt = now
             )
 
             todoItemDao.updateTodoItem(updatedTodoItem)
