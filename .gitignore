@@ -109,6 +109,9 @@ lint-results_files/
 # Android Profiling
 *.hprof
 
+# Tester email lists
+testers.csv
+
 # AI/Claude tooling
 .omc/
 .claude/
